@@ -1,5 +1,8 @@
 #include "callbackFunctions.h"
 #include "sharedMemory.h"
+#include <vector>
+
+using namespace std;
 
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
@@ -19,25 +22,35 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 
 			MIntArray vertexList;
 			MIntArray vertexCount;
-			MPointArray vertexPos;
+			MFloatPointArray vertexPos;
 			meshNode.getPoints(vertexPos, MSpace::kObject);
 			meshNode.getTriangles(vertexCount, vertexList);
 
-			double points[4];
-			for (unsigned int i = 0; i < vertexPos.length(); i++)
-			{
-				vertexPos[i].get(points);
-				MGlobal::displayInfo(MString() + "Vertex Position: " + points[0] + " " + points[1] + " " + points[2]);
-			}
+			vector<VertexLayout> verteciesData;
 			MeshHeader meshHeader;
 			meshHeader.nameLength = meshNode.name().length();
 			meshHeader.vertexCount = vertexPos.length();
-			const float* pts = meshNode.getRawPoints(&res);
-			char* data = new char[sizeof(MeshHeader) + vertexPos.length() * 3];
-			memcpy(data, &meshHeader, sizeof(MeshHeader));
-			memcpy(&data[sizeof(MeshHeader)], pts, +vertexPos.length() * 3);
 
-			gShared.Write(MessageType::mNewMesh, data, sizeof(MeshHeader) + vertexPos.length() * 3);
+			
+			VertexLayout thisVertex;
+			for (unsigned int i = 0; i < vertexPos.length(); i++)
+			{
+				vertexPos[i].get(thisVertex.pos);
+				verteciesData.push_back(thisVertex);
+				MGlobal::displayInfo(MString() + "Vertex Position: " + verteciesData[i].pos[0] + " " + verteciesData[i].pos[1] + " " + verteciesData[i].pos[2]);
+				
+			}
+
+			MGlobal::displayInfo(MString() + meshHeader.nameLength + " " + meshHeader.vertexCount);
+			
+			char* data = new char[sizeof(MeshHeader) + sizeof(verteciesData[0]) * verteciesData.size()];
+			memcpy(data, &meshHeader, sizeof(MeshHeader));
+			memcpy(&data[sizeof(MeshHeader)], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
+			MeshHeader* tmp = (MeshHeader*)data;
+			MGlobal::displayInfo(MString() + tmp->nameLength + " " + tmp->vertexCount);
+			
+			gShared.Write(MessageType::mNewMesh, data, sizeof(MeshHeader) + sizeof(verteciesData[0]) * verteciesData.size());
+			delete[] data;
 		}
 	}
 }

@@ -55,5 +55,7 @@
 #pragma comment(lib,"OpenMayaUI.lib")
 
 extern MCallbackIdArray idArray;
+#include "sharedMemory.h"
+extern SharedMemory gShared;
 
 

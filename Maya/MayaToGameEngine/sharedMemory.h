@@ -4,8 +4,13 @@
 enum MessageType{ mNoMessage = 0, mNewMesh, mLight, mCamera, mTransform, mMaterial, mVertexChange, mNameChange };
 struct MeshHeader
 {
-	UINT nameLength;
-	UINT vertexCount;
+	size_t nameLength;
+	size_t vertexCount;
+};
+
+struct VertexLayout
+{
+	float pos[3];
 };
 
 class SharedMemory
@@ -14,10 +19,10 @@ public:
 	SharedMemory();
 	~SharedMemory();
 
-	void initialize(DWORD size, LPCTSTR fileMapName, bool isProducer = false);
+	void initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer = false);
 
-	bool Write(MessageType type, void* data, UINT length);
-	MessageType Read(void* returnData, UINT& length);
+	bool Write(MessageType type, void* data, size_t length);
+	MessageType Read(void*& returnData, size_t& length);
 
 private:
 	struct SharedVars
@@ -41,7 +46,5 @@ private:
 	SharedVars* sharedVars;
 	
 	char* messageData;
-	UINT messageDataSize;
+	size_t messageDataSize;
 };
-
-extern SharedMemory gShared;

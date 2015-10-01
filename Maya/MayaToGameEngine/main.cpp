@@ -21,7 +21,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	if (MFAIL(res))  {
 		CHECK_MSTATUS(res);
 	}
-	gShared.initialize(200 * 1024 * 1024, (LPCTSTR)"HEJ", true);
+	gShared.initialize(200 * 1024 * 1024, (LPCWSTR)"MayaToGameEngine", true);
 
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
 
