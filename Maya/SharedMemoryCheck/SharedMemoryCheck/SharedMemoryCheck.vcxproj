@@ -106,12 +106,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\MayaToGameEngine\Memory.cpp" />
     <ClCompile Include="..\..\MayaToGameEngine\sharedMemory.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\MayaToGameEngine\Memory.h" />
     <ClInclude Include="..\..\MayaToGameEngine\sharedMemory.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
