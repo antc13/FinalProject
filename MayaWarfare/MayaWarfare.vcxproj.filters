@@ -78,9 +78,21 @@
     <ClInclude Include="src\main.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\Maya\MayaToGameEngine\Memory.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Maya\MayaToGameEngine\sharedMemory.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Maya\MayaToGameEngine\Memory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Maya\MayaToGameEngine\sharedMemory.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

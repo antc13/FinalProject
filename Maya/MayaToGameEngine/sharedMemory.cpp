@@ -50,12 +50,12 @@ void SharedMemory::initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer)
 	}
 }
 
-bool SharedMemory::Write(MessageType type, char* data, size_t length)
+bool SharedMemory::Write(MessageType type, char* data, INT64 length)
 {
 	std::cout << "Write" << std::endl;
 	if (isProducer)
 	{
-		size_t msgLength = ((length + sizeof(MessageHeader)) / 4096 + 1) * 4096;
+		INT64 msgLength = ((length + sizeof(MessageHeader)) / 4096 + 1) * 4096;
 		if (msgLength <= sharedVars->freeMemory)
 		{
 			MessageHeader newMessageHeader;
@@ -86,7 +86,7 @@ bool SharedMemory::Write(MessageType type, char* data, size_t length)
 	return false;
 }
 
-MessageType SharedMemory::Read(char*& returnData, size_t& returnDataLength, size_t& lengthOfMessage)
+MessageType SharedMemory::Read(char** returnData, INT64& returnDataLength, INT64& lengthOfMessage)
 {
 	if (!isProducer)
 	{
@@ -96,19 +96,19 @@ MessageType SharedMemory::Read(char*& returnData, size_t& returnDataLength, size
 
 			if (msgHeader->length - msgHeader->padding - sizeof(MessageHeader) > returnDataLength)
 			{
-				delete[] returnData;
-				returnData = new char[msgHeader->length];
+				delete[] *returnData;
+				*returnData = new char[msgHeader->length - msgHeader->padding];
 				returnDataLength = msgHeader->length;
 			}
-			ZeroMemory(returnData, returnDataLength);
+			//ZeroMemory(returnData, returnDataLength);
 			if (sharedVars->tail + msgHeader->length <= mSize)
 			{
-				memcpy(returnData, (char*)mData + sharedVars->tail + sizeof(MessageHeader), msgHeader->length - msgHeader->padding - sizeof(MessageHeader));
+				memcpy(*returnData, mData + sharedVars->tail + sizeof(MessageHeader), msgHeader->length - msgHeader->padding - sizeof(MessageHeader));
 			}
 			else
 			{
-				memcpy(returnData, (char*)mData + sharedVars->tail + sizeof(MessageHeader), mSize - (sharedVars->tail + sizeof(MessageHeader)));
-				memcpy(&returnData[mSize - (sharedVars->tail + sizeof(MessageHeader))], mData, msgHeader->length - msgHeader->padding - sizeof(MessageHeader)-(mSize - (sharedVars->tail + sizeof(MessageHeader))));
+				memcpy(*returnData, mData + sharedVars->tail + sizeof(MessageHeader), mSize - (sharedVars->tail + sizeof(MessageHeader)));
+				memcpy(&(*returnData)[mSize - (sharedVars->tail + sizeof(MessageHeader))], mData, msgHeader->length - msgHeader->padding - sizeof(MessageHeader)-(mSize - (sharedVars->tail + sizeof(MessageHeader))));
 			}
 			sharedVars->tail = (sharedVars->tail + msgHeader->length) % mSize;
 			sharedVars->freeMemory = sharedVars->freeMemory + msgHeader->length;

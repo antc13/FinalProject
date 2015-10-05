@@ -2,6 +2,9 @@
 #define main_H_
 
 #include "gameplay.h"
+#include <vector>
+#include "..\..\Maya\MayaToGameEngine\Memory.h"
+#include "..\..\Maya\MayaToGameEngine\sharedMemory.h"
 
 using namespace gameplay;
 
@@ -55,9 +58,11 @@ private:
      * Draws the scene each frame.
      */
     bool drawScene(Node* node);
-
     Scene* _scene;
     bool _wireframe;
+	std::vector<char*> nodeNames;
+	Memory mem;
+	SharedMemory shared;
 };
 
 #endif

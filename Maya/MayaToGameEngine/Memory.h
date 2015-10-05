@@ -1,14 +1,15 @@
 #pragma once
+#include <Windows.h>
 
 class Memory
 {
 public:
 	Memory();
 	~Memory();
-	char* getAllocatedMemory(size_t size);
-	size_t& getSize();
+	char*& getAllocatedMemory(INT64 size = 0);
+	INT64& getSize();
 
 private:
 	char* d;
-	size_t d_size;
+	INT64 d_size;
 };

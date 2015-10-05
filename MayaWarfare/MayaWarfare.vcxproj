@@ -70,7 +70,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;GP_USE_GAMEPAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\GamePlay\gameplay\src;..\GamePlay\external-deps\include;$(MSBuildProgramFiles32)\Microsoft DirectX SDK (June 2010)\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\GamePlay\gameplay\src;..\GamePlay\external-deps\include;$(MSBuildProgramFiles32)\Microsoft DirectX SDK (June 2010)\include</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
@@ -185,9 +185,13 @@ xcopy ..\GamePlay\gameplay\res\ui res\ui\* /s /y /d</Command>
     <None Include="res\shaders\textured.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Maya\MayaToGameEngine\Memory.cpp" />
+    <ClCompile Include="..\Maya\MayaToGameEngine\sharedMemory.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Maya\MayaToGameEngine\Memory.h" />
+    <ClInclude Include="..\Maya\MayaToGameEngine\sharedMemory.h" />
     <ClInclude Include="src\main.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

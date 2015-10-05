@@ -31,7 +31,7 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 
 			vector<VertexLayout> verteciesData;
 			MeshHeader meshHeader;
-			meshHeader.nameLength = meshNode.name().length();
+			meshHeader.nameLength = meshNode.name().length() + 1;
 			meshHeader.vertexCount = vertexPos.length();
 
 			VertexLayout thisVertex;
@@ -51,17 +51,21 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 			triVerticesArray = new int[triVertices.length()];
 			triVertices.get(triVerticesArray);
 
-			char* data = mem.getAllocatedMemory(sizeof(MeshHeader)+sizeof(verteciesData[0]) * verteciesData.size() + sizeof(int) * triVertices.length());
-
+			char*& data = mem.getAllocatedMemory(sizeof(MeshHeader) + meshNode.name().length() + 1 + sizeof(verteciesData[0]) * verteciesData.size() + sizeof(int) * triVertices.length());
+			
+			MGlobal::displayInfo("HEADER");
 			memcpy(data, &meshHeader, sizeof(MeshHeader));
-			memcpy(&data[sizeof(MeshHeader)], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
-
-			memcpy(&data[sizeof(MeshHeader)+(sizeof(verteciesData[0]) * verteciesData.size())], triVerticesArray, sizeof(int) * triVertices.length());
+			MGlobal::displayInfo("NAME");
+			memcpy(&data[sizeof(MeshHeader)], meshNode.name().asChar(), meshNode.name().length() + 1);
+			MGlobal::displayInfo("VERTEX");
+			memcpy(&data[sizeof(MeshHeader)+meshNode.name().length() + 1], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
+			MGlobal::displayInfo("INDEX");
+			memcpy(&data[sizeof(MeshHeader)+meshNode.name().length() + 1 + (sizeof(verteciesData[0]) * verteciesData.size())], triVerticesArray, sizeof(int)* triVertices.length());
 
 			for (int i = 0; i < triVertices.length(); i++)
 				MGlobal::displayInfo(MString() + triVerticesArray[i] + " " + triVertices[i]);
 			
-			gShared.Write(MessageType::mNewMesh, data, sizeof(MeshHeader) + (sizeof(verteciesData[0]) * verteciesData.size()) + sizeof(int) * triVertices.length());
+			gShared.Write(MessageType::mNewMesh, data, sizeof(MeshHeader)+meshNode.name().length() + 1 + (sizeof(verteciesData[0]) * verteciesData.size()) + sizeof(int)* triVertices.length());
 			delete[] triVerticesArray;
 		}
 	}
