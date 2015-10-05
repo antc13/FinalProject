@@ -21,9 +21,15 @@
     <ClCompile Include="..\..\MayaToGameEngine\sharedMemory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\MayaToGameEngine\Memory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\MayaToGameEngine\sharedMemory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\MayaToGameEngine\Memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

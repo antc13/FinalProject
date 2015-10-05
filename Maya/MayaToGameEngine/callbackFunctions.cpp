@@ -1,8 +1,11 @@
 #include "callbackFunctions.h"
 #include "sharedMemory.h"
+#include "memory.h"
 #include <vector>
 
 using namespace std;
+
+Memory mem;
 
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
@@ -31,26 +34,35 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 			meshHeader.nameLength = meshNode.name().length();
 			meshHeader.vertexCount = vertexPos.length();
 
-			
 			VertexLayout thisVertex;
 			for (unsigned int i = 0; i < vertexPos.length(); i++)
 			{
 				vertexPos[i].get(thisVertex.pos);
 				verteciesData.push_back(thisVertex);
 				MGlobal::displayInfo(MString() + "Vertex Position: " + verteciesData[i].pos[0] + " " + verteciesData[i].pos[1] + " " + verteciesData[i].pos[2]);
-				
+
 			}
 
-			MGlobal::displayInfo(MString() + meshHeader.nameLength + " " + meshHeader.vertexCount);
-			
-			char* data = new char[sizeof(MeshHeader) + sizeof(verteciesData[0]) * verteciesData.size()];
+			MIntArray triCount;
+			MIntArray triVertices;
+			int* triVerticesArray;
+			meshNode.getTriangles(triCount, triVertices);
+			meshHeader.indexCount = triVertices.length();
+			triVerticesArray = new int[triVertices.length()];
+			triVertices.get(triVerticesArray);
+
+			char* data = mem.getAllocatedMemory(sizeof(MeshHeader)+sizeof(verteciesData[0]) * verteciesData.size() + sizeof(int) * triVertices.length());
+
 			memcpy(data, &meshHeader, sizeof(MeshHeader));
 			memcpy(&data[sizeof(MeshHeader)], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
-			MeshHeader* tmp = (MeshHeader*)data;
-			MGlobal::displayInfo(MString() + tmp->nameLength + " " + tmp->vertexCount);
+
+			memcpy(&data[sizeof(MeshHeader)+(sizeof(verteciesData[0]) * verteciesData.size())], triVerticesArray, sizeof(int) * triVertices.length());
+
+			for (int i = 0; i < triVertices.length(); i++)
+				MGlobal::displayInfo(MString() + triVerticesArray[i] + " " + triVertices[i]);
 			
-			gShared.Write(MessageType::mNewMesh, data, sizeof(MeshHeader) + sizeof(verteciesData[0]) * verteciesData.size());
-			delete[] data;
+			gShared.Write(MessageType::mNewMesh, data, sizeof(MeshHeader) + (sizeof(verteciesData[0]) * verteciesData.size()) + sizeof(int) * triVertices.length());
+			delete[] triVerticesArray;
 		}
 	}
 }
