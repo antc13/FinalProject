@@ -11,9 +11,10 @@ main::main()
 void main::initialize()
 {
 	shared.initialize(200 * 1024 * 1024, (LPCWSTR)"MayaToGameEngine", false);
+	data = nullptr;
+	dataSize = 0;
 	// Load game scene from file
     _scene = Scene::load("res/demo.scene");
-
     // Get the box model and initialize its material parameter values and bindings
     Node* boxNode = _scene->findNode("box");
     Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
@@ -34,9 +35,8 @@ void main::update(float elapsedTime)
 {
 	MessageType type;
 	INT64 length;
-	char* data = nullptr;
-	INT64 tmp = 0;
-	type = shared.Read(&data, tmp, length);
+
+	type = shared.Read(data, dataSize, length);
 	if (type)
 	{
 		if (type == MessageType::mNewMesh)
@@ -45,34 +45,48 @@ void main::update(float elapsedTime)
 			Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
 			Material* boxMaterial = boxModel->getMaterial();
 
-
 			MeshHeader* header = (MeshHeader*)data;
-			char* name = &data[sizeof(MeshHeader)];
-			//char* name = new char[header->nameLength];
-			//memcpy(name, &data[sizeof(MeshHeader)], header->nameLength);
+			//char* name = &data[sizeof(MeshHeader)];
+			char* name = new char[header->nameLength];
+			memcpy(name, &data[sizeof(MeshHeader)], header->nameLength);
+
 			Node* triNode = Node::create(name);
 			VertexFormat::Element element(VertexFormat::POSITION, 3);
 			const VertexFormat vertFormat(&element, 1);
+
 			nodeNames.push_back(name);
 
-			VertexLayout* verteciesData;
-			verteciesData = (VertexLayout*)&((char*)data)[sizeof(MeshHeader)+header->nameLength];
+			//VertexLayout* verteciesData = new VertexLayout[header->vertexCount];
+			//memcpy(verteciesData, &data[sizeof(MeshHeader)+header->nameLength], (header->vertexCount * sizeof(VertexLayout)));
+			////VertexLayout* verteciesData = (VertexLayout*)&data[sizeof(MeshHeader)+header->nameLength];
 
-			int* index = (int*)&((char*)data)[sizeof(MeshHeader) + header->nameLength + (header->vertexCount * sizeof(VertexLayout))];
+			////UINT* index = (UINT*)&data[sizeof(MeshHeader)+header->nameLength + (header->vertexCount * sizeof(VertexLayout))];
+			//UINT* index = new UINT[header->indexCount];
+			//memcpy(index, &data[sizeof(MeshHeader)+header->nameLength + (header->vertexCount * sizeof(VertexLayout))], header->indexCount * sizeof(UINT));
+			//Mesh* triMesh = Mesh::createMesh(vertFormat, header->vertexCount, false);
 
-			Mesh* triMesh = Mesh::createMesh(vertFormat, header->vertexCount, true);
-			triMesh->setVertexData((float*)verteciesData);
+			//triMesh->setVertexData((float*)verteciesData, 0, header->vertexCount);
 
-			MeshPart* test = triMesh->addPart(Mesh::TRIANGLES, Mesh::IndexFormat::INDEX32, header->indexCount, true);
-			test->setIndexData(index, 0, header->indexCount);
+			//MeshPart* test = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, header->indexCount, false);
 
-			//Vector3 p1(1, 0, 0);
-			//Vector3 p2(1, 1, 0);
-			//Vector3 p3(0, 0, 0);
-			//Vector3 p4(0, 1, 0);
-			//triMesh = Mesh::createQuad(p1, p2, p3, p4);
+			//test->setIndexData(index, 0, header->indexCount);
 
 
+
+			//-------------TEST!----------------
+			Mesh* triMesh = Mesh::createMesh(vertFormat, 4, false);
+			float vertData[]{
+				1.0f, 0.0f, 0.0f,
+				1.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f };
+			int indexData[]{ 0, 1, 2, 1, 2, 3 };
+			triMesh->setVertexData(vertData);
+			MeshPart* test = triMesh->addPart(Mesh::TRIANGLES, Mesh::IndexFormat::INDEX32, 6, false);
+			test->setIndexData(indexData, 0, 6);
+			//-------------END TEST!------------
+			
+			
 			Model* triModel = Model::create(triMesh);
 			triModel->setMaterial(boxMaterial);
 			triNode->setDrawable(triModel);
@@ -81,9 +95,11 @@ void main::update(float elapsedTime)
 		}
 	}
 	// Rotate model
-	_scene->findNode("box")->translateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));
+	//_scene->findNode("box")->translateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));
 	for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); ++it)
+	{
 		_scene->findNode(*it)->rotateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));
+	}
 }
 
 void main::render(float elapsedTime)

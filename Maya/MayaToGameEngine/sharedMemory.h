@@ -23,7 +23,7 @@ public:
 	void initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer = false);
 
 	bool Write(MessageType type, char* data, INT64 length);
-	MessageType Read(char** returnData, INT64& returnDataLength, INT64& length);
+	MessageType Read(char*& returnData, INT64& returnDataLength, INT64& length);
 
 private:
 	struct SharedVars

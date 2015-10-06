@@ -3,7 +3,6 @@
 
 #include "gameplay.h"
 #include <vector>
-#include "..\..\Maya\MayaToGameEngine\Memory.h"
 #include "..\..\Maya\MayaToGameEngine\sharedMemory.h"
 
 using namespace gameplay;
@@ -60,9 +59,12 @@ private:
     bool drawScene(Node* node);
     Scene* _scene;
     bool _wireframe;
+
 	std::vector<char*> nodeNames;
-	Memory mem;
 	SharedMemory shared;
+	char* data;
+	INT64 dataSize;
+
 };
 
 #endif
