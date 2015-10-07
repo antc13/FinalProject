@@ -40,18 +40,20 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 		rotationMatrix.get(rotFloatMatrix);
 
 		// Write to shared Mem
-		char *&data = mem.getAllocatedMemory(sizeof(TransformHeader)+transform.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4 * 4);
-		memcpy(data, &transformHeader, sizeof(TransformHeader));
+		char *&data = mem.getAllocatedMemory(sizeof(MessageType::mTransform) + sizeof(TransformHeader) + transform.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4 * 4);
+		MessageType type = MessageType::mTransform;
+		memcpy(data, &type, sizeof(MessageType::mTransform));
+		memcpy(&data[sizeof(MessageType::mTransform)], &transformHeader, sizeof(TransformHeader));
 
 		// Name
-		memcpy(&data[sizeof(TransformHeader)], transform.name().asChar(), transform.name().length() + 1);
+		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)], transform.name().asChar(), transform.name().length() + 1);
 
 		//// Transforms
-		memcpy(&data[sizeof(TransformHeader)+transform.name().length() + 1], translations, sizeof(float)* 3);
-		memcpy(&data[sizeof(TransformHeader)+transform.name().length() + 1 + (sizeof(float)* 3)], scale, sizeof(float)* 3);
-		memcpy(&data[sizeof(TransformHeader)+transform.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3)], rotFloatMatrix, sizeof(float)* 4 * 4);
+		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+transform.name().length() + 1], translations, sizeof(float)* 3);
+		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+transform.name().length() + 1 + (sizeof(float)* 3)], scale, sizeof(float)* 3);
+		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+transform.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3)], rotFloatMatrix, sizeof(float)* 4 * 4);
 
-		gShared.Write(MessageType::mTransform, data, sizeof(TransformHeader)+transform.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4 * 4);
+		gShared.write(data, sizeof(MessageType::mTransform) + sizeof(TransformHeader)+transform.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4 * 4);
 
 		//MGlobal::displayInfo(MString() + "New translation: " + translation.x + " " + translation.y + " " + translation.z);
 		//MGlobal::displayInfo(MString() + "New scale: " + scale[0] + " " + scale[1] + " " + scale[2]);
