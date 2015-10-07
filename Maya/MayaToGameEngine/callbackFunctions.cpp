@@ -40,7 +40,6 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 			{
 				vertexPos[i].get(thisVertex.pos);
 				verteciesData.push_back(thisVertex);
-
 			}
 
 			MIntArray triCount;

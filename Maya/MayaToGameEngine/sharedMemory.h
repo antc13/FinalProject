@@ -2,7 +2,6 @@
 #include <Windows.h>
 
 
-
 class SharedMemory
 {
 public:
@@ -10,7 +9,6 @@ public:
 	~SharedMemory();
 
 	void initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer = false);
-
 	bool write(char* data, INT64 length);
 	bool read(char*& returnData, INT64& returnDataLength);
 
