@@ -1,18 +1,6 @@
 #pragma once
 #include <Windows.h>
 
-enum MessageType{ mNoMessage = 0, mNewMesh, mLight, mCamera, mTransform, mMaterial, mVertexChange, mNameChange };
-struct MeshHeader
-{
-	INT64 nameLength;
-	INT64 vertexCount;
-	INT64 indexCount;
-};
-
-struct VertexLayout
-{
-	float pos[3];
-};
 
 struct TransformHeader
 {
@@ -26,9 +14,8 @@ public:
 	~SharedMemory();
 
 	void initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer = false);
-
-	bool Write(MessageType type, char* data, INT64 length);
-	MessageType Read(char*& returnData, INT64& returnDataLength, INT64& length);
+	bool write(char* data, INT64 length);
+	bool read(char*& returnData, INT64& returnDataLength);
 
 private:
 	struct SharedVars
@@ -42,7 +29,6 @@ private:
 	{
 		INT64 length;
 		INT64 padding;
-		MessageType messageType;
 	};
 
 	DWORD mSize;

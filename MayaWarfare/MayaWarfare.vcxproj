@@ -187,11 +187,14 @@ xcopy ..\GamePlay\gameplay\res\ui res\ui\* /s /y /d</Command>
   <ItemGroup>
     <ClCompile Include="..\Maya\MayaToGameEngine\Memory.cpp" />
     <ClCompile Include="..\Maya\MayaToGameEngine\sharedMemory.cpp" />
+    <ClCompile Include="MayaData.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Maya\MayaToGameEngine\Memory.h" />
     <ClInclude Include="..\Maya\MayaToGameEngine\sharedMemory.h" />
+    <ClInclude Include="..\Maya\MayaToGameEngine\SharedLayouts.h" />
+    <ClInclude Include="MayaData.h" />
     <ClInclude Include="src\main.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

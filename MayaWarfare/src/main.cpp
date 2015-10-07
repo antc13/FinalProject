@@ -10,9 +10,6 @@ main::main()
 
 void main::initialize()
 {
-	shared.initialize(200 * 1024 * 1024, (LPCWSTR)"MayaToGameEngine", false);
-	data = nullptr;
-	dataSize = 0;
 	// Load game scene from file
     _scene = Scene::load("res/demo.scene");
     // Get the box model and initialize its material parameter values and bindings
@@ -35,10 +32,9 @@ char names[]{'0', 0, '1', 0, '2', 0, '3', 0, '4', 0, '5', 0, '6', 0, '7', 0, '8'
 
 void main::update(float elapsedTime)
 {
-	MessageType type;
-	INT64 length;
 
-	type = shared.Read(data, dataSize, length);
+	MessageType type = mayaData.read();
+
 	if (type)
 	{
 		if (type == MessageType::mNewMesh)
@@ -47,10 +43,12 @@ void main::update(float elapsedTime)
 			Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
 			Material* boxMaterial = boxModel->getMaterial();
 
-			MeshHeader* header = (MeshHeader*)data;
-			//char* name = &data[sizeof(MeshHeader)];
-			char* name = new char[header->nameLength];
-			memcpy(name, &data[sizeof(MeshHeader)], header->nameLength);
+			VertexLayout* verteciesData = nullptr;
+			UINT64 numVertecies = 0;
+			UINT* index = nullptr;
+			UINT64 numIndex = 0;
+			char* name;
+			mayaData.getNewMesh(name, verteciesData, numVertecies, index, numIndex);
 
 			Node* triNode = Node::create(name);
 			VertexFormat::Element element(VertexFormat::POSITION, 3);
@@ -58,20 +56,11 @@ void main::update(float elapsedTime)
 
 			nodeNames.push_back(name);
 
-			VertexLayout* verteciesData = new VertexLayout[header->vertexCount];
-			memcpy(verteciesData, &data[sizeof(MeshHeader)+header->nameLength], (header->vertexCount * sizeof(VertexLayout)));
-			//VertexLayout* verteciesData = (VertexLayout*)&data[sizeof(MeshHeader)+header->nameLength];
+			Mesh* triMesh = Mesh::createMesh(vertFormat, numVertecies, false);
+			triMesh->setVertexData((float*)verteciesData, 0, numVertecies);
 
-			Mesh* triMesh = Mesh::createMesh(vertFormat, header->vertexCount, false);
-			triMesh->setVertexData((float*)verteciesData, 0, header->vertexCount);
-
-
-			//UINT* index = (UINT*)&data[sizeof(MeshHeader)+header->nameLength + (header->vertexCount * sizeof(VertexLayout))];
-			UINT* index = new UINT[header->indexCount];
-			memcpy(index, &data[sizeof(MeshHeader)+header->nameLength + (header->vertexCount * sizeof(VertexLayout))], header->indexCount * sizeof(UINT));
-
-			MeshPart* meshPart = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, header->indexCount, false);
-			meshPart->setIndexData(index, 0, header->indexCount);
+			MeshPart* meshPart = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, numIndex, false);
+			meshPart->setIndexData(index, 0, numIndex);
 
 
 			//-------------TEST!----------------

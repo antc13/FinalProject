@@ -43,7 +43,7 @@ void SharedMemory::initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer)
 	}
 }
 
-bool SharedMemory::Write(MessageType type, char* data, INT64 length)
+bool SharedMemory::write(char* data, INT64 length)
 {
 	if (isProducer)
 	{
@@ -54,7 +54,6 @@ bool SharedMemory::Write(MessageType type, char* data, INT64 length)
 
 			newMessageHeader.length = msgLength;
 			newMessageHeader.padding = newMessageHeader.length - length - sizeof(MessageHeader);
-			newMessageHeader.messageType = type;
 
 			memcpy(mData + sharedVars->head, &newMessageHeader, sizeof(MessageHeader));
 
@@ -75,7 +74,7 @@ bool SharedMemory::Write(MessageType type, char* data, INT64 length)
 	return false;
 }
 
-MessageType SharedMemory::Read(char*& returnData, INT64& returnDataLength, INT64& lengthOfMessage)
+bool SharedMemory::read(char*& returnData, INT64& returnDataLength)
 {
 	if (!isProducer)
 	{
@@ -102,11 +101,9 @@ MessageType SharedMemory::Read(char*& returnData, INT64& returnDataLength, INT64
 			sharedVars->tail = (sharedVars->tail + msgHeader->length) % mSize;
 			sharedVars->freeMemory = sharedVars->freeMemory + msgHeader->length;
 
-			lengthOfMessage = msgHeader->length - msgHeader->padding - sizeof(MessageHeader);
-
-			return msgHeader->messageType;
+			return true;
 		}
 	}
-	return mNoMessage;
+	return false;
 }
 
