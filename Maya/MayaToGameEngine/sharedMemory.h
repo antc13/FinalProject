@@ -6,6 +6,7 @@ struct MeshHeader
 {
 	size_t nameLength;
 	size_t vertexCount;
+	size_t indexCount;
 };
 
 struct VertexLayout
@@ -21,8 +22,8 @@ public:
 
 	void initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer = false);
 
-	bool Write(MessageType type, void* data, size_t length);
-	MessageType Read(void*& returnData, size_t& length);
+	bool Write(MessageType type, char* data, size_t length);
+	MessageType Read(char*& returnData, size_t& returnDataLength, size_t& length);
 
 private:
 	struct SharedVars
@@ -42,9 +43,9 @@ private:
 	DWORD mSize;
 	bool isProducer;
 	HANDLE hFileMap;
-	void* mData;
+	char* mData;
 	SharedVars* sharedVars;
 	
-	char* messageData;
-	size_t messageDataSize;
+	//char* messageData;
+	//size_t messageDataSize;
 };

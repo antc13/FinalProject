@@ -11,8 +11,6 @@ SharedMemory::~SharedMemory()
 {
 	UnmapViewOfFile((LPCVOID)mData);
 	CloseHandle(hFileMap);
-	delete[] messageData;
-
 }
 
 void SharedMemory::initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer)
@@ -21,8 +19,7 @@ void SharedMemory::initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer)
 	bool isFirst = true;
 	this->isProducer = isProducer;
 	this->mSize = size;
-	messageData = nullptr;
-	messageDataSize = 0;
+
 	this->hFileMap = CreateFileMappingW(
 		INVALID_HANDLE_VALUE,
 		NULL,
@@ -40,7 +37,7 @@ void SharedMemory::initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer)
 	} else
 		std::cout << "first" << std::endl;
 
-	mData = MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	mData = (char*)MapViewOfFile(hFileMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 	sharedVars = (SharedVars*)((char*)mData + size);
 
 	if (isFirst)
@@ -53,7 +50,7 @@ void SharedMemory::initialize(DWORD size, LPCWSTR  fileMapName, bool isProducer)
 	}
 }
 
-bool SharedMemory::Write(MessageType type, void* data, size_t length)
+bool SharedMemory::Write(MessageType type, char* data, size_t length)
 {
 	std::cout << "Write" << std::endl;
 	if (isProducer)
@@ -67,16 +64,16 @@ bool SharedMemory::Write(MessageType type, void* data, size_t length)
 			newMessageHeader.padding = newMessageHeader.length - length - sizeof(MessageHeader);
 			newMessageHeader.messageType = type;
 
-			memcpy((char*)mData + sharedVars->head, &newMessageHeader, sizeof(MessageHeader));
+			memcpy(mData + sharedVars->head, &newMessageHeader, sizeof(MessageHeader));
 
 			if (sharedVars->head + newMessageHeader.length <= mSize)
 			{
-				memcpy((char*)mData + sharedVars->head + sizeof(MessageHeader), data, length);
+				memcpy(mData + sharedVars->head + sizeof(MessageHeader), data, length);
 			}
 			else
 			{
-				memcpy((char*)mData + sharedVars->head + sizeof(MessageHeader), data, mSize - (sharedVars->head + sizeof(MessageHeader)));
-				memcpy(mData, (void*)((char*)data)[mSize - (sharedVars->head + sizeof(MessageHeader))], length - (mSize - (sharedVars->head + sizeof(MessageHeader))));
+				memcpy(mData + sharedVars->head + sizeof(MessageHeader), data, mSize - (sharedVars->head + sizeof(MessageHeader)));
+				memcpy(mData, &data[mSize - (sharedVars->head + sizeof(MessageHeader))], length - (mSize - (sharedVars->head + sizeof(MessageHeader))));
 			}
 			sharedVars->head = (sharedVars->head + msgLength) % mSize;
 			sharedVars->freeMemory = sharedVars->freeMemory - msgLength;
@@ -89,7 +86,7 @@ bool SharedMemory::Write(MessageType type, void* data, size_t length)
 	return false;
 }
 
-MessageType SharedMemory::Read(void*& returnData, size_t& length)
+MessageType SharedMemory::Read(char*& returnData, size_t& returnDataLength, size_t& lengthOfMessage)
 {
 	if (!isProducer)
 	{
@@ -97,27 +94,26 @@ MessageType SharedMemory::Read(void*& returnData, size_t& length)
 		{
 			MessageHeader* msgHeader = (MessageHeader*)((char*)mData + sharedVars->tail);
 
-			if (msgHeader->length - msgHeader->padding - sizeof(MessageHeader) > messageDataSize)
+			if (msgHeader->length - msgHeader->padding - sizeof(MessageHeader) > returnDataLength)
 			{
-				delete[] messageData;
-				messageData = new char[msgHeader->length];
-				messageDataSize = msgHeader->length;
+				delete[] returnData;
+				returnData = new char[msgHeader->length];
+				returnDataLength = msgHeader->length;
 			}
-			ZeroMemory(messageData, messageDataSize);
+			ZeroMemory(returnData, returnDataLength);
 			if (sharedVars->tail + msgHeader->length <= mSize)
 			{
-				memcpy(messageData, (char*)mData + sharedVars->tail + sizeof(MessageHeader), msgHeader->length - msgHeader->padding - sizeof(MessageHeader));
+				memcpy(returnData, (char*)mData + sharedVars->tail + sizeof(MessageHeader), msgHeader->length - msgHeader->padding - sizeof(MessageHeader));
 			}
 			else
 			{
-				memcpy(messageData, (char*)mData + sharedVars->tail + sizeof(MessageHeader), mSize - (sharedVars->tail + sizeof(MessageHeader)));
-				memcpy(&messageData[mSize - (sharedVars->tail + sizeof(MessageHeader))], mData, msgHeader->length - msgHeader->padding - sizeof(MessageHeader) - (mSize - (sharedVars->tail + sizeof(MessageHeader))));
+				memcpy(returnData, (char*)mData + sharedVars->tail + sizeof(MessageHeader), mSize - (sharedVars->tail + sizeof(MessageHeader)));
+				memcpy(&returnData[mSize - (sharedVars->tail + sizeof(MessageHeader))], mData, msgHeader->length - msgHeader->padding - sizeof(MessageHeader)-(mSize - (sharedVars->tail + sizeof(MessageHeader))));
 			}
 			sharedVars->tail = (sharedVars->tail + msgHeader->length) % mSize;
 			sharedVars->freeMemory = sharedVars->freeMemory + msgHeader->length;
 
-			returnData = (void*)messageData;
-			length = msgHeader->length - msgHeader->padding - sizeof(MessageHeader);
+			lengthOfMessage = msgHeader->length - msgHeader->padding - sizeof(MessageHeader);
 
 			return msgHeader->messageType;
 		}
