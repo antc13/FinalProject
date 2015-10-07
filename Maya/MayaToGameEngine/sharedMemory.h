@@ -14,6 +14,11 @@ struct VertexLayout
 	float pos[3];
 };
 
+struct TransformHeader
+{
+	INT64 itemNameLength;
+};
+
 class SharedMemory
 {
 public:
