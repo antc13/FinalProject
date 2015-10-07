@@ -19,7 +19,7 @@ void main::initialize()
     Node* boxNode = _scene->findNode("box");
     Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
     Material* boxMaterial = boxModel->getMaterial();
-
+	boxNode->setEnabled(false);
 
     // Set the aspect ratio for the scene's camera to match the current resolution
 
@@ -30,6 +30,8 @@ void main::finalize()
 {
     SAFE_RELEASE(_scene);
 }
+
+char names[]{'0', 0, '1', 0, '2', 0, '3', 0, '4', 0, '5', 0, '6', 0, '7', 0, '8', 0, '9', 0};
 
 void main::update(float elapsedTime)
 {
@@ -56,34 +58,33 @@ void main::update(float elapsedTime)
 
 			nodeNames.push_back(name);
 
-			//VertexLayout* verteciesData = new VertexLayout[header->vertexCount];
-			//memcpy(verteciesData, &data[sizeof(MeshHeader)+header->nameLength], (header->vertexCount * sizeof(VertexLayout)));
-			////VertexLayout* verteciesData = (VertexLayout*)&data[sizeof(MeshHeader)+header->nameLength];
+			VertexLayout* verteciesData = new VertexLayout[header->vertexCount];
+			memcpy(verteciesData, &data[sizeof(MeshHeader)+header->nameLength], (header->vertexCount * sizeof(VertexLayout)));
+			//VertexLayout* verteciesData = (VertexLayout*)&data[sizeof(MeshHeader)+header->nameLength];
 
-			////UINT* index = (UINT*)&data[sizeof(MeshHeader)+header->nameLength + (header->vertexCount * sizeof(VertexLayout))];
-			//UINT* index = new UINT[header->indexCount];
-			//memcpy(index, &data[sizeof(MeshHeader)+header->nameLength + (header->vertexCount * sizeof(VertexLayout))], header->indexCount * sizeof(UINT));
-			//Mesh* triMesh = Mesh::createMesh(vertFormat, header->vertexCount, false);
+			Mesh* triMesh = Mesh::createMesh(vertFormat, header->vertexCount, false);
+			triMesh->setVertexData((float*)verteciesData, 0, header->vertexCount);
 
-			//triMesh->setVertexData((float*)verteciesData, 0, header->vertexCount);
 
-			//MeshPart* test = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, header->indexCount, false);
+			//UINT* index = (UINT*)&data[sizeof(MeshHeader)+header->nameLength + (header->vertexCount * sizeof(VertexLayout))];
+			UINT* index = new UINT[header->indexCount];
+			memcpy(index, &data[sizeof(MeshHeader)+header->nameLength + (header->vertexCount * sizeof(VertexLayout))], header->indexCount * sizeof(UINT));
 
-			//test->setIndexData(index, 0, header->indexCount);
-
+			MeshPart* meshPart = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, header->indexCount, false);
+			meshPart->setIndexData(index, 0, header->indexCount);
 
 
 			//-------------TEST!----------------
-			Mesh* triMesh = Mesh::createMesh(vertFormat, 4, false);
-			float vertData[]{
-				1.0f, 0.0f, 0.0f,
-				1.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f, 0.0f };
-			int indexData[]{ 0, 1, 2, 1, 2, 3 };
-			triMesh->setVertexData(vertData);
-			MeshPart* test = triMesh->addPart(Mesh::TRIANGLES, Mesh::IndexFormat::INDEX32, 6, false);
-			test->setIndexData(indexData, 0, 6);
+			//Mesh* triMesh = Mesh::createMesh(vertFormat, 4, false);
+			//float vertData[]{
+			//	1.0f, 0.0f, 0.0f,
+			//	1.0f, 1.0f, 0.0f,
+			//	0.0f, 0.0f, 0.0f,
+			//	0.0f, 1.0f, 0.0f };
+			//int indexData[]{ 0, 1, 2, 1, 2, 3 };
+			//triMesh->setVertexData(vertData);
+			//MeshPart* test = triMesh->addPart(Mesh::TRIANGLES, Mesh::IndexFormat::INDEX32, 6, false);
+			//test->setIndexData(indexData, 0, 6);
 			//-------------END TEST!------------
 			
 			
@@ -91,14 +92,26 @@ void main::update(float elapsedTime)
 			triModel->setMaterial(boxMaterial);
 			triNode->setDrawable(triModel);
 			triNode->setEnabled(true);
-			_scene->addNode(triNode);
+			Node* copy = triNode->clone();
+			//_scene->addNode(triNode);
+			//Node* copy = _scene->findNode(name)->clone();
+			//copy->setId(&names[(nodeNames.size() - 1)*2]);
+			//nodeNames.push_back(&names[(nodeNames.size() - 1) * 2]);
+			_scene->addNode(copy);
+			
+			triModel->release();
+			triMesh->release();
+			triNode->release();
 		}
 	}
 	// Rotate model
-	//_scene->findNode("box")->translateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));
+	_scene->findNode("box")->translateX(1.0f);
+	int i = 1;
 	for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); ++it)
 	{
-		_scene->findNode(*it)->rotateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));
+		//_scene->findNode(*it)->rotateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));
+		_scene->findNode(*it)->translateX(-0.001f * i);
+		i *= -1;
 	}
 }
 
@@ -115,8 +128,8 @@ bool main::drawScene(Node* node)
 {
     // If the node visited contains a drawable object, draw it
     Drawable* drawable = node->getDrawable(); 
-    if (drawable)
-        drawable->draw(_wireframe);
+	if (drawable)
+		drawable->draw(_wireframe);
 
     return true;
 }

@@ -64,7 +64,6 @@ private:
 	SharedMemory shared;
 	char* data;
 	INT64 dataSize;
-
 };
 
 #endif
