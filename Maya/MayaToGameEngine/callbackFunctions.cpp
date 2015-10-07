@@ -1,6 +1,7 @@
 #include "callbackFunctions.h"
 #include "sharedMemory.h"
 #include "memory.h"
+#include "SharedLayouts.h"
 #include <vector>
 
 using namespace std;
@@ -31,7 +32,7 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 
 			vector<VertexLayout> verteciesData;
 			MeshHeader meshHeader;
-			meshHeader.nameLength = meshNode.name().length();
+			meshHeader.nameLength = meshNode.name().length() + 1;
 			meshHeader.vertexCount = vertexPos.length();
 
 			VertexLayout thisVertex;
@@ -39,7 +40,6 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 			{
 				vertexPos[i].get(thisVertex.pos);
 				verteciesData.push_back(thisVertex);
-				MGlobal::displayInfo(MString() + "Vertex Position: " + verteciesData[i].pos[0] + " " + verteciesData[i].pos[1] + " " + verteciesData[i].pos[2]);
 
 			}
 
@@ -51,17 +51,21 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 			triVerticesArray = new int[triVertices.length()];
 			triVertices.get(triVerticesArray);
 
-			char* data = mem.getAllocatedMemory(sizeof(MeshHeader)+sizeof(verteciesData[0]) * verteciesData.size() + sizeof(int) * triVertices.length());
-
-			memcpy(data, &meshHeader, sizeof(MeshHeader));
-			memcpy(&data[sizeof(MeshHeader)], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
-
-			memcpy(&data[sizeof(MeshHeader)+(sizeof(verteciesData[0]) * verteciesData.size())], triVerticesArray, sizeof(int) * triVertices.length());
-
-			for (int i = 0; i < triVertices.length(); i++)
-				MGlobal::displayInfo(MString() + triVerticesArray[i] + " " + triVertices[i]);
+			char*& data = mem.getAllocatedMemory(sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + meshNode.name().length() + 1 + sizeof(verteciesData[0]) * verteciesData.size() + sizeof(int)* triVertices.length());
 			
-			gShared.Write(MessageType::mNewMesh, data, sizeof(MeshHeader) + (sizeof(verteciesData[0]) * verteciesData.size()) + sizeof(int) * triVertices.length());
+			// -- Copy message Type
+			MessageType type = MessageType::mNewMesh;
+			memcpy(data, &type, sizeof(MessageType::mNewMesh));
+			// -- Copy mesh header;
+			memcpy(&data[sizeof(MessageType::mNewMesh)], &meshHeader, sizeof(MeshHeader));
+			// -- Copy name;
+			memcpy(&data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader)], meshNode.name().asChar(), meshNode.name().length() + 1);
+			// -- Copy vertecies;
+			memcpy(&data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader)+meshNode.name().length() + 1], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
+			// -- Copy indecies;
+			memcpy(&data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader)+meshNode.name().length() + 1 + (sizeof(verteciesData[0]) * verteciesData.size())], triVerticesArray, sizeof(int)* triVertices.length());
+			
+			gShared.write(data, sizeof(MessageType::mNewMesh) + sizeof(MeshHeader)+meshNode.name().length() + 1 + (sizeof(verteciesData[0]) * verteciesData.size()) + sizeof(int)* triVertices.length());
 			delete[] triVerticesArray;
 		}
 	}

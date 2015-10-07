@@ -11,9 +11,9 @@ Memory::~Memory()
 	delete[] d;
 }
 
-char* Memory::getAllocatedMemory(size_t size)
+char*& Memory::getAllocatedMemory(INT64 size)
 {
-	if (size > d_size)
+	if (d_size < size)
 	{
 		delete[] d;
 		d = new char[size];
@@ -21,7 +21,7 @@ char* Memory::getAllocatedMemory(size_t size)
 	return d;
 }
 
-size_t& Memory::getSize()
+INT64& Memory::getSize()
 {
 	return d_size;
 }
