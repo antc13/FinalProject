@@ -97,13 +97,28 @@ void main::update(float elapsedTime)
 			char* name;
 			float* translations = nullptr;
 			float* scale = nullptr;
-			float* rotation = nullptr;
-			mayaData.getNewTransform(name, translations, scale, rotation);
+			float* rotation1 = nullptr;
+			float* rotation2 = nullptr;
+			float* rotation3 = nullptr;
+			float* rotation4 = nullptr;
+
+			mayaData.getNewTransform(name, translations, scale, rotation1, rotation2, rotation3, rotation4);
 			
 			Node* node = _scene->findNode(name);
 
-			node->translate(translations[0], translations[1], translations[2]);
+			Vector3 tr(translations[0], translations[1], translations[2]);
+
+			node->translate(tr);
 			node->scale(scale[0], scale[1], scale[2]);
+			
+
+			Matrix rotationMatrix(rotation1[0], rotation1[1], rotation1[2], rotation1[3],
+								  rotation2[0], rotation2[1], rotation2[2], rotation2[3],
+								  rotation3[0], rotation3[1], rotation3[2], rotation3[3],
+								  rotation4[0], rotation4[1], rotation4[2], rotation4[3]);
+
+			node->rotate(rotationMatrix);
+			
 
 
 		}

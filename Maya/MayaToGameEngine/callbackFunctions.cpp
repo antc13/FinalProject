@@ -55,7 +55,9 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 		//// Transforms
 		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1], translations, sizeof(float)* 3);
 		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3)], scaleF, sizeof(float)* 3);
-		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3)], rotFloatMatrix, sizeof(float)* 4 * 4);
+
+		for (unsigned int i = 0; i < 4; i++)
+			memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float) * 4 * i], rotFloatMatrix[i], sizeof(float)* 4);
 
 		gShared.write(data, sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4 * 4);
 
