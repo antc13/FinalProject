@@ -12,7 +12,7 @@ public:
 
 	MessageType read();
 	void getNewMesh(char*& name, VertexLayout*& vertecies, UINT64& numVertecies, UINT*& indecies, UINT64& numIndecies);
-
+	void getNewTransform(char*& name, float*& translation, float*& scale, float*& rotation);
 private:
 	SharedMemory shared;
 	char* data;

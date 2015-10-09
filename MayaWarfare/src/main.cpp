@@ -92,6 +92,21 @@ void main::update(float elapsedTime)
 			triMesh->release();
 			triNode->release();
 		}
+		else if (type == MessageType::mTransform)
+		{
+			char* name;
+			float* translations = nullptr;
+			float* scale = nullptr;
+			float* rotation = nullptr;
+			mayaData.getNewTransform(name, translations, scale, rotation);
+			
+			Node* node = _scene->findNode(name);
+
+			node->translate(translations[0], translations[1], translations[2]);
+			node->scale(scale[0], scale[1], scale[2]);
+
+
+		}
 	}
 	// Rotate model
 	_scene->findNode("box")->translateX(1.0f);
@@ -99,8 +114,8 @@ void main::update(float elapsedTime)
 	for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); ++it)
 	{
 		//_scene->findNode(*it)->rotateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));
-		_scene->findNode(*it)->translateX(-0.001f * i);
-		i *= -1;
+		//_scene->findNode(*it)->translateX(-0.001f * i);
+		//i *= -1;
 	}
 }
 

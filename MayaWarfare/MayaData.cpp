@@ -30,3 +30,17 @@ void MayaData::getNewMesh(char*& name, VertexLayout*& vertecies, UINT64& numVert
 	indecies = new UINT[header->indexCount];
 	memcpy(indecies, &data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + header->nameLength + (header->vertexCount * sizeof(VertexLayout))], header->indexCount * sizeof(UINT));
 }
+
+void MayaData::getNewTransform(char*& name, float*& translation, float*& scale, float*& rotation)
+{
+	TransformHeader* header = (TransformHeader*)&data[sizeof(MessageType::mTransform)];
+	name = new char[header->itemNameLength];
+	memcpy(name, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)], header->itemNameLength);
+
+	translation = new float;
+	memcpy(translation, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength], sizeof(float) * 3);
+	scale = new float;
+	memcpy(scale, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float) * 3], sizeof(float)* 3);
+	//rotation = new float;
+	//memcpy(rotation, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float) * 3], sizeof(float) * 4 * 4);
+}
