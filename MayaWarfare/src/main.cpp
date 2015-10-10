@@ -21,6 +21,7 @@ void main::initialize()
     // Set the aspect ratio for the scene's camera to match the current resolution
 
     _scene->getActiveCamera()->setAspectRatio(getAspectRatio());
+	_scene->getActiveCamera()->getNode()->setId("perspShape");
 }
 
 void main::finalize()
@@ -135,7 +136,6 @@ void main::update(float elapsedTime)
 			float* mat4 = nullptr;
 
 			mayaData.getNewCamera(mat1, mat2, mat3, mat4);
-			Camera* cam = Camera::createPerspective(90, 90, 1, 1000);
 
 			Matrix projectionMatrix(mat1[0], mat1[1], mat1[2], mat1[3],
 									mat2[0], mat2[1], mat2[2], mat2[3],

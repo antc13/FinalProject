@@ -163,6 +163,8 @@ void cameraCreated(MFnCamera camera)
 	for (unsigned int i = 0; i < 4; i++)
 		memcpy(&data[sizeof(MessageType::mCamera) + sizeof(float)* 4 * i], camMatrix[i], sizeof(float)* 4);
 	gShared.write(data, sizeof(MessageType::mCamera) + sizeof(float)* 4 * 4);
+
+	idArray.append(MNodeMessage::addAttributeChangedCallback(camera.parent(0), transformAttributeChanged));
 }
 
 void nodeCreated(MObject &node, void *clientData)
