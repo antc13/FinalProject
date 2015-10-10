@@ -94,54 +94,19 @@ void main::update(float elapsedTime)
 			char* name;
 			float* translations = nullptr;
 			float* scale = nullptr;
-			float* rotation1 = nullptr;
+			float* rotation = nullptr;
 
-			mayaData.getNewTransform(name, translations, scale, rotation1);
+			mayaData.getNewTransform(name, translations, scale, rotation);
 			
 			Node* node = _scene->findNode(name);
 
-			Quaternion oldRot = node->getRotation();
-			Quaternion newRot(rotation1);
-			oldRot.normalize();
-			newRot.normalize();
-			oldRot.inverse();
-			Quaternion diffRot;
-			Quaternion::multiply(oldRot, newRot, &diffRot);
+			Quaternion newRot(rotation);
 
 			Vector3 newTrans(translations[0], translations[1], translations[2]);
-			Vector3 oldTrans = node->getTranslation();
-			Vector3 diffTrans = newTrans - oldTrans;
 
 			Vector3 newScale(scale);
-			Vector3 oldScale = node->getScale();
-			Vector3 diffScale = (newScale - oldScale) + Vector3(1, 1, 1);
 
-			node->scale(diffScale);
-			node->rotate(diffRot);
-			node->translate(diffTrans);
-			//node->set(Vector3(scale[0], scale[1], scale[2]), rotationMatrix, tr);
-			
-
-		}
-
-		else if (type == MessageType::mCamera)
-		{
-			float* mat1 = nullptr;
-			float* mat2 = nullptr;
-			float* mat3 = nullptr;
-			float* mat4 = nullptr;
-
-			mayaData.getNewCamera(mat1, mat2, mat3, mat4);
-			Camera* cam = Camera::createPerspective(90, 90, 1, 1000);
-
-			Matrix projectionMatrix(mat1[0], mat1[1], mat1[2], mat1[3],
-									mat2[0], mat2[1], mat2[2], mat2[3],
-									mat3[0], mat3[1], mat3[2], mat3[3],
-									mat4[0], mat4[1], mat4[2], mat4[3]);
-			
-			projectionMatrix.transpose();
-			//_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
-			
+			node->set(newScale, newRot, newTrans);
 		}
 
 		type = mayaData.read();
