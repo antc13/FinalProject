@@ -143,7 +143,8 @@ void main::update(float elapsedTime)
 									mat4[0], mat4[1], mat4[2], mat4[3]);
 			
 			projectionMatrix.transpose();
-			//_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
+			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
+			
 			
 		}
 
