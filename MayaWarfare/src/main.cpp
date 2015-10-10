@@ -35,7 +35,7 @@ void main::update(float elapsedTime)
 
 	MessageType type = mayaData.read();
 
-	if (type)
+	while(type)
 	{
 		if (type == MessageType::mNewMesh)
 		{
@@ -116,6 +116,8 @@ void main::update(float elapsedTime)
 
 			node->set(Vector3(scale[0], scale[1], scale[2]), rotationMatrix, tr);
 		}
+
+		type = mayaData.read();
 	}
 	// Rotate model
 	_scene->findNode("box")->translateX(1.0f);
