@@ -117,6 +117,26 @@ void main::update(float elapsedTime)
 			node->set(Vector3(scale[0], scale[1], scale[2]), rotationMatrix, tr);
 		}
 
+		else if (type == MessageType::mCamera)
+		{
+			float* mat1 = nullptr;
+			float* mat2 = nullptr;
+			float* mat3 = nullptr;
+			float* mat4 = nullptr;
+
+			mayaData.getNewCamera(mat1, mat2, mat3, mat4);
+			Camera* cam = Camera::createPerspective(90, 90, 1, 1000);
+
+			Matrix projectionMatrix(mat1[0], mat1[1], mat1[2], mat1[3],
+									mat2[0], mat2[1], mat2[2], mat2[3],
+									mat3[0], mat3[1], mat3[2], mat3[3],
+									mat4[0], mat4[1], mat4[2], mat4[3]);
+			
+			projectionMatrix.transpose();
+			//_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
+			
+		}
+
 		type = mayaData.read();
 	}
 	// Rotate model

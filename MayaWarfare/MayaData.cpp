@@ -52,3 +52,16 @@ void MayaData::getNewTransform(char*& name, float*& translation, float*& scale, 
 	memcpy(rotation3, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float)* 3 + sizeof(float)* 4 * 2], sizeof(float)* 4);
 	memcpy(rotation4, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float)* 3 + sizeof(float)* 4 * 3], sizeof(float)* 4);
 }
+
+void MayaData::getNewCamera(float*& mat1, float*& mat2, float*& mat3, float*& mat4)
+{
+	mat1 = new float;
+	mat2 = new float;
+	mat3 = new float;
+	mat4 = new float;
+
+	memcpy(mat1, &data[sizeof(MessageType::mCamera)], sizeof(float) * 4);
+	memcpy(mat2, &data[sizeof(MessageType::mCamera) + sizeof(float) * 4], sizeof(float)* 4);
+	memcpy(mat3, &data[sizeof(MessageType::mCamera) + sizeof(float) * 4 * 2], sizeof(float)* 4);
+	memcpy(mat4, &data[sizeof(MessageType::mCamera) + sizeof(float) * 4 * 3], sizeof(float)* 4);
+}
