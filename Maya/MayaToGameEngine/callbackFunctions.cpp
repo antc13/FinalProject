@@ -2,6 +2,7 @@
 #include "sharedMemory.h"
 #include "memory.h"
 #include "SharedLayouts.h"
+#include "maya_includes.h"
 #include <vector>
 
 using namespace std;
@@ -17,13 +18,12 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 		TransformHeader transformHeader;
 		MObject child = transform.child(0);
 		MFnDagNode fnChild(child);
-
 		transformHeader.itemNameLength = fnChild.name().length() + 1;
 
 		MGlobal::displayInfo(transform.fullPathName());
 
 		// Translations
-		MVector translation = transform.translation(MSpace::kObject);
+		MVector translation = transform.translation(MSpace::kPostTransform);
 		float translations[3];
 		translations[0] = translation.x;
 		translations[1] = translation.y;
@@ -37,16 +37,18 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 		scaleF[1] = scale[1];
 		scaleF[2] = scale[2];
 
-		MEulerRotation rotation;
+		double tmp[4];
+		MQuaternion quat(tmp);
+		transform.getRotationQuaternion(quat.x, quat.y, quat.z, quat.w, MSpace::kPostTransform);
 
-		transform.getRotation(rotation);
-
-		MMatrix rotationMatrix = rotation.asMatrix();
-		float rotFloatMatrix[4][4];
-		rotationMatrix.get(rotFloatMatrix);
+		float quatF[4];
+		quatF[0] = quat.x;
+		quatF[1] = quat.y;
+		quatF[2] = quat.z;
+		quatF[3] = quat.w;
 
 		// Write to shared Mem
-		char *&data = mem.getAllocatedMemory(sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4 * 4);
+		char *&data = mem.getAllocatedMemory(sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4);
 		MessageType type = MessageType::mTransform;
 		memcpy(data, &type, sizeof(MessageType::mTransform));
 		memcpy(&data[sizeof(MessageType::mTransform)], &transformHeader, sizeof(TransformHeader));
@@ -58,10 +60,9 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1], translations, sizeof(float)* 3);
 		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3)], scaleF, sizeof(float)* 3);
 
-		for (unsigned int i = 0; i < 4; i++)
-			memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float) * 4 * i], rotFloatMatrix[i], sizeof(float)* 4);
+		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3) + (sizeof(float) * 3)], quatF, sizeof(float) * 4);
 
-		gShared.write(data, sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4 * 4);
+		gShared.write(data, sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4);
 
 		//MGlobal::displayInfo(MString() + "New translation: " + translation.x + " " + translation.y + " " + translation.z);
 		//MGlobal::displayInfo(MString() + "New scale: " + scale[0] + " " + scale[1] + " " + scale[2]);

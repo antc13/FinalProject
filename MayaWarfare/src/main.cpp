@@ -98,23 +98,33 @@ void main::update(float elapsedTime)
 			float* translations = nullptr;
 			float* scale = nullptr;
 			float* rotation1 = nullptr;
-			float* rotation2 = nullptr;
-			float* rotation3 = nullptr;
-			float* rotation4 = nullptr;
 
-			mayaData.getNewTransform(name, translations, scale, rotation1, rotation2, rotation3, rotation4);
+			mayaData.getNewTransform(name, translations, scale, rotation1);
 			
 			Node* node = _scene->findNode(name);
 
-			Matrix rotationMatrix(rotation1[0], rotation1[1], rotation1[2], rotation1[3],
-								  rotation2[0], rotation2[1], rotation2[2], rotation2[3],
-								  rotation3[0], rotation3[1], rotation3[2], rotation3[3],
-								  rotation4[0], rotation4[1], rotation4[2], rotation4[3]);
+			Quaternion oldRot = node->getRotation();
+			Quaternion newRot(rotation1);
+			oldRot.normalize();
+			newRot.normalize();
+			oldRot.inverse();
+			Quaternion diffRot;
+			Quaternion::multiply(oldRot, newRot, &diffRot);
 
+			Vector3 newTrans(translations[0], translations[1], translations[2]);
+			Vector3 oldTrans = node->getTranslation();
+			Vector3 diffTrans = newTrans - oldTrans;
 
-			Vector3 tr(translations[0], translations[1], translations[2]);
+			Vector3 newScale(scale);
+			Vector3 oldScale = node->getScale();
+			Vector3 diffScale = oldScale - newScale;
 
-			node->set(Vector3(scale[0], scale[1], scale[2]), rotationMatrix, tr);
+			//node->scale(diffScale);
+			node->rotate(diffRot);
+			node->translate(diffTrans);
+			//node->set(Vector3(scale[0], scale[1], scale[2]), rotationMatrix, tr);
+			
+
 		}
 
 		else if (type == MessageType::mCamera)
@@ -140,8 +150,9 @@ void main::update(float elapsedTime)
 		type = mayaData.read();
 	}
 	// Rotate model
-	_scene->findNode("box")->translateX(1.0f);
-	int i = 1;
+	_scene->findNode("box")->translateX(0.01f);
+	_scene->findNode("box")->rotateX(0.01f);
+
 	for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); ++it)
 	{
 		//_scene->findNode(*it)->rotateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));

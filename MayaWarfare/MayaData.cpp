@@ -31,7 +31,7 @@ void MayaData::getNewMesh(char*& name, VertexLayout*& vertecies, UINT64& numVert
 	memcpy(indecies, &data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + header->nameLength + (header->vertexCount * sizeof(VertexLayout))], header->indexCount * sizeof(UINT));
 }
 
-void MayaData::getNewTransform(char*& name, float*& translation, float*& scale, float*& rotation1, float*& rotation2, float*& rotation3, float*& rotation4)
+void MayaData::getNewTransform(char*& name, float*& translation, float*& scale, float*& rotation)
 {
 	TransformHeader* header = (TransformHeader*)&data[sizeof(MessageType::mTransform)];
 	name = new char[header->itemNameLength];
@@ -42,15 +42,9 @@ void MayaData::getNewTransform(char*& name, float*& translation, float*& scale, 
 	scale = new float;
 	memcpy(scale, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float) * 3], sizeof(float)* 3);
 	
-	rotation1 = new float;
-	rotation2 = new float;
-	rotation3 = new float;
-	rotation4 = new float;
+	rotation = new float[4];
 
-	memcpy(rotation1, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float) * 3], sizeof(float) * 4);
-	memcpy(rotation2, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float)* 3 + sizeof(float) * 4], sizeof(float)* 4);
-	memcpy(rotation3, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float)* 3 + sizeof(float)* 4 * 2], sizeof(float)* 4);
-	memcpy(rotation4, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float)* 3 + sizeof(float)* 4 * 3], sizeof(float)* 4);
+	memcpy(rotation, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float) * 3], sizeof(float) * 4);
 }
 
 void MayaData::getNewCamera(float*& mat1, float*& mat2, float*& mat3, float*& mat4)
