@@ -16,7 +16,6 @@ void main::initialize()
     Node* boxNode = _scene->findNode("box");
     Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
     Material* boxMaterial = boxModel->getMaterial();
-	boxNode->setEnabled(false);
 
     // Set the aspect ratio for the scene's camera to match the current resolution
 
@@ -28,8 +27,6 @@ void main::finalize()
 {
     SAFE_RELEASE(_scene);
 }
-
-char names[]{'0', 0, '1', 0, '2', 0, '3', 0, '4', 0, '5', 0, '6', 0, '7', 0, '8', 0, '9', 0};
 
 void main::update(float elapsedTime)
 {
@@ -98,34 +95,18 @@ void main::update(float elapsedTime)
 			char* name;
 			float* translations = nullptr;
 			float* scale = nullptr;
-			float* rotation1 = nullptr;
+			float* rotation = nullptr;
 
-			mayaData.getNewTransform(name, translations, scale, rotation1);
-			
+			mayaData.getNewTransform(name, translations, scale, rotation);
+
 			Node* node = _scene->findNode(name);
 
-			Quaternion oldRot = node->getRotation();
-			Quaternion newRot(rotation1);
-			oldRot.normalize();
-			newRot.normalize();
-			oldRot.inverse();
-			Quaternion diffRot;
-			Quaternion::multiply(oldRot, newRot, &diffRot);
+			Quaternion newRot(rotation);
 
 			Vector3 newTrans(translations[0], translations[1], translations[2]);
-			Vector3 oldTrans = node->getTranslation();
-			Vector3 diffTrans = newTrans - oldTrans;
 
 			Vector3 newScale(scale);
-			Vector3 oldScale = node->getScale();
-			Vector3 diffScale = oldScale - newScale;
-
-			//node->scale(diffScale);
-			node->rotate(diffRot);
-			node->translate(diffTrans);
-			//node->set(Vector3(scale[0], scale[1], scale[2]), rotationMatrix, tr);
-			
-
+			node->set(newScale, newRot, newTrans);
 		}
 
 		else if (type == MessageType::mCamera)
@@ -145,7 +126,7 @@ void main::update(float elapsedTime)
 			projectionMatrix.transpose();
 			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
 			
-			
+		
 		}
 
 		type = mayaData.read();
