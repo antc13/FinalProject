@@ -37,7 +37,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 
 		if (node.hasFn(MFn::kCamera))
 		{
-			//cameraCreated(node);
+			cameraCreated(node);
 		}
 	}
 

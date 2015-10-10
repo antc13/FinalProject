@@ -141,7 +141,28 @@ void meshCreated(MFnMesh meshNode)
 
 void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
+	MFnCamera camera(p_Plug.node());
+	if (p_Msg & MNodeMessage::kAttributeSet)
+	{
+		cameraCreated(p_Plug.node());
 
+	}
+}
+
+void cameraCreated(MFnCamera camera)
+{
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(float)* 4 * 4);
+
+	MFloatMatrix projectionMatrix = camera.projectionMatrix();
+	float camMatrix[4][4];
+	projectionMatrix.get(camMatrix);
+
+	MessageType type = MessageType::mCamera;
+	memcpy(data, &type, sizeof(MessageType::mCamera));
+
+	for (unsigned int i = 0; i < 4; i++)
+		memcpy(&data[sizeof(MessageType::mCamera) + sizeof(float)* 4 * i], camMatrix[i], sizeof(float)* 4);
+	gShared.write(data, sizeof(MessageType::mCamera) + sizeof(float)* 4 * 4);
 }
 
 void nodeCreated(MObject &node, void *clientData)
