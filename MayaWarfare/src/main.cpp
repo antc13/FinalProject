@@ -16,7 +16,6 @@ void main::initialize()
     Node* boxNode = _scene->findNode("box");
     Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
     Material* boxMaterial = boxModel->getMaterial();
-	boxNode->setEnabled(false);
 
     // Set the aspect ratio for the scene's camera to match the current resolution
 
@@ -27,8 +26,6 @@ void main::finalize()
 {
     SAFE_RELEASE(_scene);
 }
-
-char names[]{'0', 0, '1', 0, '2', 0, '3', 0, '4', 0, '5', 0, '6', 0, '7', 0, '8', 0, '9', 0};
 
 void main::update(float elapsedTime)
 {
@@ -117,9 +114,9 @@ void main::update(float elapsedTime)
 
 			Vector3 newScale(scale);
 			Vector3 oldScale = node->getScale();
-			Vector3 diffScale = oldScale - newScale;
+			Vector3 diffScale = (newScale - oldScale) + Vector3(1, 1, 1);
 
-			//node->scale(diffScale);
+			node->scale(diffScale);
 			node->rotate(diffRot);
 			node->translate(diffTrans);
 			//node->set(Vector3(scale[0], scale[1], scale[2]), rotationMatrix, tr);
