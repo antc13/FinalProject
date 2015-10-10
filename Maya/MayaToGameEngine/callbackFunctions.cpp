@@ -37,9 +37,15 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 		scaleF[1] = scale[1];
 		scaleF[2] = scale[2];
 
+		MTransformationMatrix transformationMatrix = fnChild.transformationMatrix();
 		MEulerRotation rotation;
-		transform.getRotation(rotation);
-		MMatrix rotationMatrix = rotation.asMatrix();
+
+		//transform.getRotation(rotation);
+		MPoint p(100, 100, 100);
+
+		transformationMatrix.setRotatePivot(p,MSpace::kObject, true);
+		transformationMatrix.setRotatePivotTranslation(p, MSpace::kObject);
+		MMatrix rotationMatrix = transformationMatrix.asRotateMatrix();//rotation.asMatrix();
 		float rotFloatMatrix[4][4];
 		rotationMatrix.get(rotFloatMatrix);
 
