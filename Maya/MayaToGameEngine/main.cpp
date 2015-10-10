@@ -22,6 +22,24 @@ EXPORT MStatus initializePlugin(MObject obj)
 		CHECK_MSTATUS(res);
 	}
 	gShared.initialize(200 * 1024 * 1024, (LPCWSTR)"MayaToGameEngine", true);
+	
+	MDagPath path;
+	MItDependencyNodes it(MFn::kInvalid);
+	for (; !it.isDone(); it.next())
+	{
+		MObject node = it.thisNode();
+		nodeCreated(node, nullptr);
+
+		if (node.hasFn(MFn::kMesh))
+		{
+			meshCreated(node);
+		}
+
+		if (node.hasFn(MFn::kCamera))
+		{
+			//cameraCreated(node);
+		}
+	}
 
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
 
