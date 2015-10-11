@@ -42,10 +42,10 @@ void main::update(float elapsedTime)
 			Material* boxMaterial = boxModel->getMaterial();
 
 			VertexLayout* verteciesData = nullptr;
-			UINT64 numVertecies = 0;
+			UINT numVertecies = 0;
 			UINT* index = nullptr;
-			UINT64 numIndex = 0;
-			char* name;
+			UINT numIndex = 0;
+			char* name = nullptr;
 			mayaData.getNewMesh(name, verteciesData, numVertecies, index, numIndex);
 
 			Node* triNode = Node::create(name);
@@ -53,11 +53,13 @@ void main::update(float elapsedTime)
 			const VertexFormat vertFormat(&element, 1);
 
 			nodeNames.push_back(name);
+			//std::string tmp(name);
+			meshVertecies[name] = verteciesData;
 
-			Mesh* triMesh = Mesh::createMesh(vertFormat, numVertecies, false);
+			Mesh* triMesh = Mesh::createMesh(vertFormat, numVertecies, true);
 			triMesh->setVertexData((float*)verteciesData, 0, numVertecies);
 
-			MeshPart* meshPart = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, numIndex, false);
+			MeshPart* meshPart = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, numIndex, true);
 			meshPart->setIndexData(index, 0, numIndex);
 
 
@@ -89,6 +91,23 @@ void main::update(float elapsedTime)
 			triModel->release();
 			triMesh->release();
 			triNode->release();
+		}
+		else if (type == MessageType::mVertexChange)
+		{
+			VertexLayout* updatedVerteciesData = nullptr;
+			UINT numVerteciesChanged = 0;
+			UINT* index = nullptr;
+			char* name = nullptr;
+			mayaData.getVertexChanged(name, updatedVerteciesData, index, numVerteciesChanged);
+
+			//Node* nodeChanged = _scene->findNode(name);
+			VertexLayout* vertexData = meshVertecies[name];
+
+			for (UINT i = 0; i < numVerteciesChanged; i++)
+				vertexData[index[i]] = updatedVerteciesData[i];
+
+			Model* mesh = dynamic_cast<Model*>(_scene->findNode(name)->getDrawable());
+			mesh->getMesh()->setVertexData((float*)vertexData);
 		}
 		else if (type == MessageType::mTransform)
 		{

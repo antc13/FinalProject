@@ -16,7 +16,7 @@ MessageType MayaData::read(){
 	return MessageType::mNoMessage;
 }
 
-void MayaData::getNewMesh(char*& name, VertexLayout*& vertecies, UINT64& numVertecies, UINT*& indecies, UINT64& numIndecies){
+void MayaData::getNewMesh(char*& name, VertexLayout*& vertecies, UINT& numVertecies, UINT*& indecies, UINT& numIndecies){
 
 	MeshHeader* header = (MeshHeader*)&data[sizeof(MessageType::mNewMesh)];
 	name = new char[header->nameLength];
@@ -37,9 +37,9 @@ void MayaData::getNewTransform(char*& name, float*& translation, float*& scale, 
 	name = new char[header->itemNameLength];
 	memcpy(name, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)], header->itemNameLength);
 
-	translation = new float;
+	translation = new float[3];
 	memcpy(translation, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength], sizeof(float) * 3);
-	scale = new float;
+	scale = new float[3];
 	memcpy(scale, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float) * 3], sizeof(float)* 3);
 	
 	rotation = new float[4];
@@ -58,4 +58,23 @@ void MayaData::getNewCamera(float*& mat1, float*& mat2, float*& mat3, float*& ma
 	memcpy(mat2, &data[sizeof(MessageType::mCamera) + sizeof(float) * 4], sizeof(float)* 4);
 	memcpy(mat3, &data[sizeof(MessageType::mCamera) + sizeof(float) * 4 * 2], sizeof(float)* 4);
 	memcpy(mat4, &data[sizeof(MessageType::mCamera) + sizeof(float) * 4 * 3], sizeof(float)* 4);
+}
+
+void MayaData::getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged)
+{
+	VertexChangeHeader* header = (VertexChangeHeader*)&data[sizeof(MessageType::mVertexChange)];
+	UINT64 offset = sizeof(MessageType::mVertexChange) + sizeof(VertexChangeHeader);
+
+	name = new char[header->nameLength];
+	memcpy(name, &data[offset], header->nameLength);
+	offset += header->nameLength;
+
+	numVerteciesChanged = header->numVerteciesChanged;
+
+	verteciesData = new VertexLayout[header->numVerteciesChanged];
+	memcpy(verteciesData, &data[offset], header->numVerteciesChanged * sizeof(VertexLayout));
+	offset += header->numVerteciesChanged * sizeof(VertexLayout);
+
+	indexNumbers = new UINT[header->numVerteciesChanged];
+	memcpy(indexNumbers, &data[offset], header->numVerteciesChanged * sizeof(UINT));
 }
