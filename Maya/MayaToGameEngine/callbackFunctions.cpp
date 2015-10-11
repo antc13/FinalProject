@@ -20,8 +20,6 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 		MFnDagNode fnChild(child);
 		transformHeader.itemNameLength = fnChild.name().length() + 1;
 
-		MGlobal::displayInfo(transform.fullPathName());
-
 		// Translations
 		MVector translation = transform.translation(MSpace::kPostTransform);
 		float translations[3];
@@ -71,7 +69,6 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 
 }
 
-
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
 	// obtain the node that contains this attribute
@@ -87,6 +84,10 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 		{
 			// is ready!, here you shoud have access to the whole MFnMesh object to access, query, extract information from the mesh
 			meshCreated(p_Plug.node());
+		}
+		else if (p_Msg & MNodeMessage::AttributeMessage::kAttributeEval)
+		{
+			meshVertecChanged(p_Plug.node());
 		}
 	}
 }
@@ -139,13 +140,122 @@ void meshCreated(MFnMesh meshNode)
 	idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
 }
 
+void meshVertecChanged(MObject node)
+{
+	MFnMesh meshNode(node);
+	MPointArray verticesPos;
+	meshNode.getPoints(verticesPos, MSpace::kObject);
+	MRichSelection activeList;
+	MGlobal::getRichSelection(activeList, true);
+	MSelectionList list1;
+	MSelectionList list2;
+	activeList.getSelection(list1);
+	activeList.getSymmetry(list2);
+	list1.merge(list2, MSelectionList::kMergeNormal);
+	MItSelectionList iter(list1);
+
+	vector<UINT>vertexIDsAlreadySent;
+
+	for (; !iter.isDone(); iter.next())
+	{
+		MDagPath item;
+		MObject component;
+		iter.getDagPath(item, component);
+		if (item.node() == node)
+		{
+			if (component.apiType() == MFn::kMeshVertComponent)
+			{
+				MFnSingleIndexedComponent vertices(component);
+				MIntArray vertexIDs;
+				vertices.getElements(vertexIDs);
+				vertexIDsAlreadySent.resize(vertexIDs.length());
+				for (unsigned int i = 0; i < vertexIDs.length(); i++)
+					vertexIDsAlreadySent[i] = vertexIDs[i];
+			}
+			else if (component.apiType() == MFn::kMeshEdgeComponent)
+			{
+				MFnSingleIndexedComponent edges(component);
+				MIntArray edgeIDs;
+				edges.getElements(edgeIDs);
+				for (unsigned int i = 0; i < edgeIDs.length(); i++)
+				{
+					int2 vertexIDs;
+					meshNode.getEdgeVertices(edgeIDs[i], vertexIDs);
+					for (unsigned int i = 0; i < 2; i++)
+					{
+						if (!(find(vertexIDsAlreadySent.begin(), vertexIDsAlreadySent.end(), vertexIDs[i]) != vertexIDsAlreadySent.end()))
+						{
+							vertexIDsAlreadySent.push_back(vertexIDs[i]);
+						}
+					}
+				}
+			}
+			else if (component.apiType() == MFn::kMeshPolygonComponent)
+			{
+				MFnSingleIndexedComponent faces(component);
+				MIntArray faceIDs;
+				faces.getElements(faceIDs);
+				for (unsigned int i = 0; i < faceIDs.length(); i++)
+				{
+					MIntArray vertexIDs;
+					meshNode.getPolygonVertices(faceIDs[i], vertexIDs);
+					for (unsigned int i = 0; i < vertexIDs.length(); i++)
+					{
+						if (!(find(vertexIDsAlreadySent.begin(), vertexIDsAlreadySent.end(), vertexIDs[i]) != vertexIDsAlreadySent.end()))
+						{
+							vertexIDsAlreadySent.push_back(vertexIDs[i]);
+						}
+					}
+				}
+			}
+			//------ Send the Vertecies Changed ---------
+			MFloatPointArray vertexPos;
+			meshNode.getPoints(vertexPos, MSpace::kObject);
+			vector<VertexLayout>verteciesData;
+			VertexLayout thisVertex;
+			for (unsigned int i = 0; i < vertexIDsAlreadySent.size(); i++)
+			{
+				vertexPos[vertexIDsAlreadySent[i]].get(thisVertex.pos);
+				verteciesData.push_back(thisVertex);
+			}
+
+			VertexChangeHeader header;
+			header.nameLength = meshNode.name().length() + 1;
+			header.numVerteciesChanged = vertexIDsAlreadySent.size();
+
+			char* data = mem.getAllocatedMemory(sizeof(MessageType::mVertexChange) + sizeof(VertexChangeHeader) + meshNode.name().length() + 1 + vertexIDsAlreadySent.size() * sizeof(vertexIDsAlreadySent[0]) + verteciesData.size() * sizeof(verteciesData[0]));
+
+			UINT64 offset = 0;
+			MessageType type = MessageType::mVertexChange;
+
+			memcpy(&data[offset], &type, sizeof(MessageType::mVertexChange));
+			offset += sizeof(MessageType::mVertexChange);
+
+			memcpy(&data[offset], &header, sizeof(VertexChangeHeader));
+			offset += sizeof(VertexChangeHeader);
+
+			memcpy(&data[offset], meshNode.name().asChar(), meshNode.name().length() + 1);
+			offset += meshNode.name().length() + 1;
+
+			memcpy(&data[offset], verteciesData.data(), verteciesData.size() * sizeof(verteciesData[0]));
+			offset += verteciesData.size() * sizeof(verteciesData[0]);
+
+			memcpy(&data[offset], vertexIDsAlreadySent.data(), vertexIDsAlreadySent.size() * sizeof(vertexIDsAlreadySent[0]));
+			offset += vertexIDsAlreadySent.size() * sizeof(vertexIDsAlreadySent[0]);
+
+			gShared.write(data, offset);
+			break;
+		}
+	}
+}
+
+
 void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
 	MFnCamera camera(p_Plug.node());
 	if (p_Msg & MNodeMessage::kAttributeSet)
 	{
 		cameraCreated(p_Plug.node());
-
 	}
 }
 

@@ -5,15 +5,17 @@
 
 class MayaData{
 public:
-
-
 	MayaData();
 	~MayaData();
 
 	MessageType read();
-	void getNewMesh(char*& name, VertexLayout*& vertecies, UINT64& numVertecies, UINT*& indecies, UINT64& numIndecies);
+
+	void getNewMesh(char*& name, VertexLayout*& vertecies, UINT& numVertecies, UINT*& indecies, UINT& numIndecies);
 	void getNewCamera(float*& mat1, float*& mat2, float*& mat3, float*& mat4);
 	void getNewTransform(char*& name, float*& translation, float*& scale, float*& rotation1);
+
+	void getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged);
+
 private:
 	SharedMemory shared;
 	char* data;

@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <iostream>
 
+#define CHUNK_SIZE 256
+
 SharedMemory::SharedMemory()
 {
 	
@@ -47,7 +49,7 @@ bool SharedMemory::write(char* data, INT64 length)
 {
 	if (isProducer)
 	{
-		INT64 msgLength = ((length + sizeof(MessageHeader)) / 4096 + 1) * 4096;
+		INT64 msgLength = ((length + sizeof(MessageHeader)) / CHUNK_SIZE + 1) * CHUNK_SIZE;
 		if (msgLength <= sharedVars->freeMemory)
 		{
 			MessageHeader newMessageHeader;

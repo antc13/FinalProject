@@ -3,6 +3,8 @@
 
 #include "gameplay.h"
 #include <vector>
+#include <map>
+#include <string>
 #include "..\MayaData.h"
 
 
@@ -63,6 +65,7 @@ private:
 
 	MayaData mayaData;
 	std::vector<char*> nodeNames;
+	std::map<std::string, VertexLayout*> meshVertecies;
 };
 
 #endif

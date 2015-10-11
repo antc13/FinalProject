@@ -4,9 +4,15 @@ enum MessageType{ mNoMessage = 0, mNewMesh, mLight, mCamera, mTransform, mMateri
 
 struct MeshHeader
 {
-	INT64 nameLength;
-	INT64 vertexCount;
-	INT64 indexCount;
+	INT nameLength;
+	INT vertexCount;
+	INT indexCount;
+};
+
+struct VertexChangeHeader
+{
+	INT nameLength;
+	INT numVerteciesChanged;
 };
 
 struct VertexLayout

@@ -30,6 +30,9 @@
 #include <maya/MSelectionList.h>
 #include <maya/MItDependencyNodes.h>
 #include <maya/MQuaternion.h>
+#include <maya/MItSelectionList.h>
+#include <maya/MFnSingleIndexedComponent.h>
+#include <maya/MRichSelection.h>
 
 // Wrappers
 #include <maya/MGlobal.h>
