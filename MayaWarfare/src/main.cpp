@@ -108,13 +108,16 @@ void main::update(float elapsedTime)
 
 			Model* mesh = dynamic_cast<Model*>(_scene->findNode(name)->getDrawable());
 			mesh->getMesh()->setVertexData((float*)vertexData);
+			delete[] index;
+			delete[] updatedVerteciesData;
+			delete[] name;
 		}
 		else if (type == MessageType::mTransform)
 		{
 			char* name;
-			float* translations = nullptr;
-			float* scale = nullptr;
-			float* rotation = nullptr;
+			float translations[3];
+			float scale[3];
+			float rotation[4];
 
 			mayaData.getNewTransform(name, translations, scale, rotation);
 

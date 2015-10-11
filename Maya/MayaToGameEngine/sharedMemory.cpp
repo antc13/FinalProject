@@ -80,7 +80,7 @@ bool SharedMemory::read(char*& returnData, INT64& returnDataLength)
 {
 	if (!isProducer)
 	{
-		if (sharedVars->head != sharedVars->tail)
+		if (sharedVars->head != sharedVars->tail || sharedVars->freeMemory == 0)
 		{
 			MessageHeader* msgHeader = (MessageHeader*)((char*)mData + sharedVars->tail);
 
