@@ -75,3 +75,12 @@ void MayaData::getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*
 	indexNumbers = new UINT[header->numVerteciesChanged];
 	memcpy(indexNumbers, &data[offset], header->numVerteciesChanged * sizeof(UINT));
 }
+
+void MayaData::getRemoveNode(char*& name)
+{
+	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mNodeRemoved)];
+	UINT64 offset = sizeof(MessageType::mNodeRemoved) + sizeof(NodeRemovedHeader);
+
+	name = new char[header->nameLength];
+	memcpy(name, &data[offset], header->nameLength);
+}

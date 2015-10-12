@@ -16,6 +16,8 @@ public:
 
 	void getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged);
 
+	void getRemoveNode(char*& name);
+
 private:
 	SharedMemory shared;
 	char* data;

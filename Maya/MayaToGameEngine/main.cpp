@@ -40,7 +40,6 @@ EXPORT MStatus initializePlugin(MObject obj)
 			cameraCreated(node);
 		}
 	}
-
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
 
 	MGlobal::displayInfo("Maya plugin loaded!");

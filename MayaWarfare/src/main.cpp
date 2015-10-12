@@ -101,7 +101,7 @@ void main::update(float elapsedTime)
 			mayaData.getVertexChanged(name, updatedVerteciesData, index, numVerteciesChanged);
 
 			//Node* nodeChanged = _scene->findNode(name);
-			VertexLayout* vertexData = meshVertecies[name];
+			VertexLayout* vertexData = meshVertecies.find(name)->second;
 
 			for (UINT i = 0; i < numVerteciesChanged; i++)
 				vertexData[index[i]] = updatedVerteciesData[i];
@@ -130,7 +130,6 @@ void main::update(float elapsedTime)
 			Vector3 newScale(scale);
 			node->set(newScale, newRot, newTrans);
 		}
-
 		else if (type == MessageType::mCamera)
 		{
 			float* mat1 = nullptr;
@@ -149,6 +148,20 @@ void main::update(float elapsedTime)
 			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
 			
 		
+		}
+		else if (type == MessageType::mNodeRemoved)
+		{
+			char* name = nullptr;
+
+			mayaData.getRemoveNode(name);
+			if (meshVertecies.find(name) != meshVertecies.end())
+			{
+				delete[] meshVertecies.find(name)->second;
+				meshVertecies.erase(name);
+				_scene->removeNode(_scene->findNode(name));
+				_scene->removeNode(_scene->findNode(name));
+				delete[] name;
+			}
 		}
 
 		type = mayaData.read();

@@ -1,6 +1,6 @@
 #pragma once
 
-enum MessageType{ mNoMessage = 0, mNewMesh, mLight, mCamera, mTransform, mMaterial, mVertexChange, mNameChange };
+enum MessageType{ mNoMessage = 0, mNewMesh, mLight, mCamera, mTransform, mMaterial, mVertexChange, mNameChange, mNodeRemoved};
 
 struct MeshHeader
 {
@@ -18,4 +18,9 @@ struct VertexChangeHeader
 struct VertexLayout
 {
 	float pos[3];
+};
+
+struct NodeRemovedHeader
+{
+	INT nameLength;
 };

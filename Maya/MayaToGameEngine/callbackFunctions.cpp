@@ -69,6 +69,7 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 
 }
 
+
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
 	// obtain the node that contains this attribute
@@ -92,8 +93,9 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 	}
 }
 
-void meshCreated(MFnMesh meshNode)
+void meshCreated(MObject node)
 {
+	MFnMesh meshNode(node);
 	MIntArray vertexList;
 	MIntArray vertexCount;
 	MFloatPointArray vertexPos;
@@ -138,6 +140,7 @@ void meshCreated(MFnMesh meshNode)
 	delete[] triVerticesArray;
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
+	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
 }
 
 void meshVertecChanged(MObject node)
@@ -153,7 +156,7 @@ void meshVertecChanged(MObject node)
 	activeList.getSymmetry(list2);
 	list1.merge(list2, MSelectionList::kMergeNormal);
 	MItSelectionList iter(list1);
-
+	
 	vector<UINT>vertexIDsAlreadySent;
 
 	for (; !iter.isDone(); iter.next())
@@ -259,8 +262,9 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug,
 	}
 }
 
-void cameraCreated(MFnCamera camera)
+void cameraCreated(MObject node)
 {
+	MFnCamera camera(node);
 	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(float)* 4 * 4);
 
 	MFloatMatrix projectionMatrix = camera.projectionMatrix();
@@ -275,7 +279,9 @@ void cameraCreated(MFnCamera camera)
 	gShared.write(data, sizeof(MessageType::mCamera) + sizeof(float)* 4 * 4);
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(camera.parent(0), transformAttributeChanged));
+	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
 }
+
 
 void nodeCreated(MObject &node, void *clientData)
 {
@@ -287,5 +293,37 @@ void nodeCreated(MObject &node, void *clientData)
 	if (node.hasFn(MFn::kCamera))
 	{ 
 		idArray.append(MNodeMessage::addAttributeChangedCallback(node, cameraAttributeChanged, clientData));
+	}
+}
+
+void nodeRemoval(MObject &node, void *clientData)
+{
+	if (node.hasFn(MFn::kMesh) || node.hasFn(MFn::kCamera))
+	{
+		MCallbackIdArray ids;
+		MMessage::nodeCallbacks(node, ids);
+		MMessage::removeCallbacks(ids);
+
+		NodeRemovedHeader header;
+		MFnDependencyNode tmp(node);
+		header.nameLength = tmp.name().length() + 1;
+
+		MGlobal::displayInfo(tmp.name());
+
+		MessageType type = MessageType::mNodeRemoved;
+		char* data = mem.getAllocatedMemory(sizeof(MessageType::mNodeRemoved) + sizeof(NodeRemovedHeader) + header.nameLength);
+
+		UINT64 offset = 0;
+
+		memcpy(&data[offset], &type, sizeof(MessageType::mNodeRemoved));
+		offset += sizeof(MessageType::mNodeRemoved);
+
+		memcpy(&data[offset], &header, sizeof(NodeRemovedHeader));
+		offset += sizeof(NodeRemovedHeader);
+
+		memcpy(&data[offset], tmp.name().asChar(), header.nameLength);
+		offset += header.nameLength;
+
+		gShared.write(data, offset);
 	}
 }
