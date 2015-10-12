@@ -18,6 +18,7 @@ struct VertexChangeHeader
 struct VertexLayout
 {
 	float pos[3];
+	float normal[3];
 };
 
 struct NodeRemovedHeader

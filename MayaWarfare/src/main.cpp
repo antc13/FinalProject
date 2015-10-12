@@ -49,8 +49,11 @@ void main::update(float elapsedTime)
 			mayaData.getNewMesh(name, verteciesData, numVertecies, index, numIndex);
 
 			Node* triNode = Node::create(name);
-			VertexFormat::Element element(VertexFormat::POSITION, 3);
-			const VertexFormat vertFormat(&element, 1);
+			VertexFormat::Element elements[] = {
+				VertexFormat::Element(VertexFormat::POSITION, 3),
+				VertexFormat::Element(VertexFormat::NORMAL, 3) 
+			};
+			const VertexFormat vertFormat(elements, ARRAYSIZE(elements));
 
 			nodeNames.push_back(name);
 			//std::string tmp(name);
@@ -91,6 +94,7 @@ void main::update(float elapsedTime)
 			triModel->release();
 			triMesh->release();
 			triNode->release();
+			delete[] index;
 		}
 		else if (type == MessageType::mVertexChange)
 		{
@@ -129,25 +133,21 @@ void main::update(float elapsedTime)
 
 			Vector3 newScale(scale);
 			node->set(newScale, newRot, newTrans);
+			delete[] name;
 		}
 		else if (type == MessageType::mCamera)
 		{
-			float* mat1 = nullptr;
-			float* mat2 = nullptr;
-			float* mat3 = nullptr;
-			float* mat4 = nullptr;
+			float mat[4][4];
 
-			mayaData.getNewCamera(mat1, mat2, mat3, mat4);
+			mayaData.getNewCamera(mat);
 
-			Matrix projectionMatrix(mat1[0], mat1[1], mat1[2], mat1[3],
-									mat2[0], mat2[1], mat2[2], mat2[3],
-									mat3[0], mat3[1], mat3[2], mat3[3],
-									mat4[0], mat4[1], mat4[2], mat4[3]);
+			Matrix projectionMatrix(mat[0][0], mat[0][1], mat[0][2], mat[0][3],
+									mat[1][0], mat[1][1], mat[1][2], mat[1][3],
+									mat[2][0], mat[2][1], mat[2][2], mat[2][3],
+									mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
 			
 			projectionMatrix.transpose();
 			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
-			
-		
 		}
 		else if (type == MessageType::mNodeRemoved)
 		{
@@ -159,9 +159,9 @@ void main::update(float elapsedTime)
 				delete[] meshVertecies.find(name)->second;
 				meshVertecies.erase(name);
 				_scene->removeNode(_scene->findNode(name));
-				_scene->removeNode(_scene->findNode(name));
-				delete[] name;
 			}
+
+			delete[] name;
 		}
 
 		type = mayaData.read();

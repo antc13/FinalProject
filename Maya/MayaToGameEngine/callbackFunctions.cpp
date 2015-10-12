@@ -96,31 +96,35 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 void meshCreated(MObject node)
 {
 	MFnMesh meshNode(node);
-	MIntArray vertexList;
-	MIntArray vertexCount;
 	MFloatPointArray vertexPos;
 	meshNode.getPoints(vertexPos, MSpace::kObject);
-	meshNode.getTriangles(vertexCount, vertexList);
-
-	vector<VertexLayout> verteciesData;
-	MeshHeader meshHeader;
-	meshHeader.nameLength = meshNode.name().length() + 1;
-	meshHeader.vertexCount = vertexPos.length();
-
-	VertexLayout thisVertex;
-	for (unsigned int i = 0; i < vertexPos.length(); i++)
-	{
-		vertexPos[i].get(thisVertex.pos);
-		verteciesData.push_back(thisVertex);
-	}
 
 	MIntArray triCount;
 	MIntArray triVertices;
 	int* triVerticesArray;
 	meshNode.getTriangles(triCount, triVertices);
-	meshHeader.indexCount = triVertices.length();
 	triVerticesArray = new int[triVertices.length()];
 	triVertices.get(triVerticesArray);
+
+	vector<VertexLayout> verteciesData;
+
+	VertexLayout thisVertex;
+	MVector normal;
+	for (unsigned int i = 0; i < vertexPos.length(); i++)
+	{
+		meshNode.getVertexNormal(i, true, normal, MSpace::kObject);
+		vertexPos[i].get(thisVertex.pos);
+		thisVertex.normal[0] = normal.x;
+		thisVertex.normal[1] = normal.y;
+		thisVertex.normal[2] = normal.z;
+		verteciesData.push_back(thisVertex);
+		MGlobal::displayInfo(MString() + thisVertex.pos[0] + " " + thisVertex.pos[1] + " " + thisVertex.pos[2] + " " + thisVertex.normal[0] + " " + thisVertex.normal[1] + " " + thisVertex.normal[2]);
+	}
+
+	MeshHeader meshHeader;
+	meshHeader.nameLength = meshNode.name().length() + 1;
+	meshHeader.vertexCount = verteciesData.size();
+	meshHeader.indexCount = triVertices.length();
 
 	char*& data = mem.getAllocatedMemory(sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + meshNode.name().length() + 1 + sizeof(verteciesData[0]) * verteciesData.size() + sizeof(int)* triVertices.length());
 
@@ -307,8 +311,6 @@ void nodeRemoval(MObject &node, void *clientData)
 		NodeRemovedHeader header;
 		MFnDependencyNode tmp(node);
 		header.nameLength = tmp.name().length() + 1;
-
-		MGlobal::displayInfo(tmp.name());
 
 		MessageType type = MessageType::mNodeRemoved;
 		char* data = mem.getAllocatedMemory(sizeof(MessageType::mNodeRemoved) + sizeof(NodeRemovedHeader) + header.nameLength);
