@@ -129,20 +129,19 @@ void main::update(float elapsedTime)
 
 			Vector3 newScale(scale);
 			node->set(newScale, newRot, newTrans);
+
+			delete[] name;
 		}
 		else if (type == MessageType::mCamera)
 		{
-			float* mat1 = nullptr;
-			float* mat2 = nullptr;
-			float* mat3 = nullptr;
-			float* mat4 = nullptr;
+			float camMatrix[4][4];
 
-			mayaData.getNewCamera(mat1, mat2, mat3, mat4);
+			mayaData.getNewCamera(camMatrix);
 
-			Matrix projectionMatrix(mat1[0], mat1[1], mat1[2], mat1[3],
-									mat2[0], mat2[1], mat2[2], mat2[3],
-									mat3[0], mat3[1], mat3[2], mat3[3],
-									mat4[0], mat4[1], mat4[2], mat4[3]);
+			Matrix projectionMatrix(camMatrix[0][0], camMatrix[0][1], camMatrix[0][2], camMatrix[0][3],
+				camMatrix[1][0], camMatrix[1][1], camMatrix[1][2], camMatrix[1][3],
+				camMatrix[2][0], camMatrix[2][1], camMatrix[2][2], camMatrix[2][3],
+				camMatrix[3][0], camMatrix[3][1], camMatrix[3][2], camMatrix[3][3]);
 			
 			projectionMatrix.transpose();
 			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
