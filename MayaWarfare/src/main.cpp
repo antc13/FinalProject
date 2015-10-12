@@ -133,21 +133,24 @@ void main::update(float elapsedTime)
 
 			Vector3 newScale(scale);
 			node->set(newScale, newRot, newTrans);
+
 			delete[] name;
 		}
 		else if (type == MessageType::mCamera)
 		{
-			float mat[4][4];
+			float camMatrix[4][4];
 
-			mayaData.getNewCamera(mat);
+			mayaData.getNewCamera(camMatrix);
 
-			Matrix projectionMatrix(mat[0][0], mat[0][1], mat[0][2], mat[0][3],
-									mat[1][0], mat[1][1], mat[1][2], mat[1][3],
-									mat[2][0], mat[2][1], mat[2][2], mat[2][3],
-									mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
+			Matrix projectionMatrix(camMatrix[0][0], camMatrix[0][1], camMatrix[0][2], camMatrix[0][3],
+				camMatrix[1][0], camMatrix[1][1], camMatrix[1][2], camMatrix[1][3],
+				camMatrix[2][0], camMatrix[2][1], camMatrix[2][2], camMatrix[2][3],
+				camMatrix[3][0], camMatrix[3][1], camMatrix[3][2], camMatrix[3][3]);
 			
 			projectionMatrix.transpose();
 			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
+			
+		
 		}
 		else if (type == MessageType::mNodeRemoved)
 		{
