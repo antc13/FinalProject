@@ -9,31 +9,18 @@ main::main()
 }
 
 void main::initialize()
-{	
+{
 	// Load game scene from file
     _scene = Scene::load("res/demo.scene");
     // Get the box model and initialize its material parameter values and bindings
     Node* boxNode = _scene->findNode("box");
     Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
     Material* boxMaterial = boxModel->getMaterial();
-	RenderState::StateBlock* block = RenderState::StateBlock::create();
-	block->setDepthFunction(RenderState::DepthFunction::DEPTH_LESS);
-	block->setFrontFace(RenderState::FrontFace::FRONT_FACE_CCW);
-	block->setDepthTest(true);
-	block->setCullFace(true);
-	block->setDepthWrite(true);
-	boxMaterial->setStateBlock(block);
+
     // Set the aspect ratio for the scene's camera to match the current resolution
 
     _scene->getActiveCamera()->setAspectRatio(getAspectRatio());
 	_scene->getActiveCamera()->getNode()->setId("perspShape");
-	perspCam = _scene->getActiveCamera();
-
-	Node* tmpNode = Node::create("topShape");
-	orthoCam = Camera::createOrthographic(0, 0, _scene->getActiveCamera()->getNearPlane(), _scene->getActiveCamera()->getAspectRatio(),_scene->getActiveCamera()->getFarPlane());
-	tmpNode->setCamera(orthoCam);
-	_scene->addNode(tmpNode);
-	//_scene->setActiveCamera(orthoCam);
 }
 
 void main::finalize()
@@ -69,7 +56,7 @@ void main::update(float elapsedTime)
 			const VertexFormat vertFormat(elements, ARRAYSIZE(elements));
 
 			nodeNames.push_back(name);
-			
+			//std::string tmp(name);
 			meshVertecies[name] = verteciesData;
 
 			Mesh* triMesh = Mesh::createMesh(vertFormat, numVertecies, true);
@@ -77,13 +64,31 @@ void main::update(float elapsedTime)
 
 			MeshPart* meshPart = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, numIndex, true);
 			meshPart->setIndexData(index, 0, numIndex);
-				
+
+
+			//-------------TEST!----------------
+			//Mesh* triMesh = Mesh::createMesh(vertFormat, 4, false);
+			//float vertData[]{
+			//	1.0f, 0.0f, 0.0f,
+			//	1.0f, 1.0f, 0.0f,
+			//	0.0f, 0.0f, 0.0f,
+			//	0.0f, 1.0f, 0.0f };
+			//int indexData[]{ 0, 1, 2, 1, 2, 3 };
+			//triMesh->setVertexData(vertData);
+			//MeshPart* test = triMesh->addPart(Mesh::TRIANGLES, Mesh::IndexFormat::INDEX32, 6, false);
+			//test->setIndexData(indexData, 0, 6);
+			//-------------END TEST!------------
+			
+			
 			Model* triModel = Model::create(triMesh);
 			triModel->setMaterial(boxMaterial);
 			triNode->setDrawable(triModel);
 			triNode->setEnabled(true);
-
 			Node* copy = triNode->clone();
+			//_scene->addNode(triNode);
+			//Node* copy = _scene->findNode(name)->clone();
+			//copy->setId(&names[(nodeNames.size() - 1)*2]);
+			//nodeNames.push_back(&names[(nodeNames.size() - 1) * 2]);
 			_scene->addNode(copy);
 			
 			triModel->release();
@@ -121,40 +126,43 @@ void main::update(float elapsedTime)
 			mayaData.getNewTransform(name, translations, scale, rotation);
 
 			Node* node = _scene->findNode(name);
-			if (node)
-			{
-				Quaternion newRot(rotation);
 
-				Vector3 newTrans(translations[0], translations[1], translations[2]);
+			Quaternion newRot(rotation);
 
-				Vector3 newScale(scale);
-				node->set(newScale, newRot, newTrans);
-			}
+			Vector3 newTrans(translations[0], translations[1], translations[2]);
+
+			Vector3 newScale(scale);
+			node->set(newScale, newRot, newTrans);
+<<<<<<< HEAD
+=======
+
+>>>>>>> d67bd5eea347fd99f11e4d33be6a4255a61d9d6a
 			delete[] name;
 		}
 		else if (type == MessageType::mCamera)
 		{
-			char* name;
+<<<<<<< HEAD
+			float mat[4][4];
+
+			mayaData.getNewCamera(mat);
+
+			Matrix projectionMatrix(mat[0][0], mat[0][1], mat[0][2], mat[0][3],
+									mat[1][0], mat[1][1], mat[1][2], mat[1][3],
+									mat[2][0], mat[2][1], mat[2][2], mat[2][3],
+									mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
+=======
 			float camMatrix[4][4];
-			bool isOrtho = true;
 
-			mayaData.getNewCamera(name, camMatrix, &isOrtho);
+			mayaData.getNewCamera(camMatrix);
+
+			Matrix projectionMatrix(camMatrix[0][0], camMatrix[0][1], camMatrix[0][2], camMatrix[0][3],
+				camMatrix[1][0], camMatrix[1][1], camMatrix[1][2], camMatrix[1][3],
+				camMatrix[2][0], camMatrix[2][1], camMatrix[2][2], camMatrix[2][3],
+				camMatrix[3][0], camMatrix[3][1], camMatrix[3][2], camMatrix[3][3]);
+>>>>>>> d67bd5eea347fd99f11e4d33be6a4255a61d9d6a
 			
-			Matrix projectionMatrix(camMatrix[0][0], camMatrix[1][0], camMatrix[2][0], camMatrix[3][0],
-									camMatrix[0][1], camMatrix[1][1], camMatrix[2][1], camMatrix[3][1],
-									camMatrix[0][2], camMatrix[1][2], camMatrix[2][2], camMatrix[3][2],
-									camMatrix[0][3], camMatrix[1][3], camMatrix[2][3], camMatrix[3][3]);
-			
-			//projectionMatrix.transpose();
-
-			if (isOrtho)
-				_scene->setActiveCamera(orthoCam);
-			else
-				_scene->setActiveCamera(perspCam);
-
-			_scene->getActiveCamera()->getNode()->setId(name);
+			projectionMatrix.transpose();
 			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
-			
 		}
 		else if (type == MessageType::mNodeRemoved)
 		{
@@ -170,6 +178,7 @@ void main::update(float elapsedTime)
 
 			delete[] name;
 		}
+
 		type = mayaData.read();
 	}
 	// Rotate model
@@ -196,7 +205,6 @@ void main::render(float elapsedTime)
 bool main::drawScene(Node* node)
 {
     // If the node visited contains a drawable object, draw it
-	
     Drawable* drawable = node->getDrawable(); 
 	if (drawable)
 		drawable->draw(_wireframe);
