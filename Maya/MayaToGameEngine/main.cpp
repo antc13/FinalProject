@@ -40,8 +40,9 @@ EXPORT MStatus initializePlugin(MObject obj)
 			cameraCreated(node);
 		}
 	}
+	
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
-
+	idArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cameraChanged));
 	MGlobal::displayInfo("Maya plugin loaded!");
 	// if res == kSuccess then the plugin has been loaded,
 	// otherwise is has not.

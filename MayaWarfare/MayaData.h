@@ -11,7 +11,7 @@ public:
 	MessageType read();
 
 	void getNewMesh(char*& name, VertexLayout*& vertecies, UINT& numVertecies, UINT*& indecies, UINT& numIndecies);
-	void getNewCamera(float camMatrix[4][4]);
+	void getNewCamera(char*& name, float camMatrix[4][4], bool* isortho);
 	void getNewTransform(char*& name, float translation[3], float scale[3], float rotation[4]);
 
 	void getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged);

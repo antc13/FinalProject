@@ -256,6 +256,10 @@ void meshVertecChanged(MObject node)
 	}
 }
 
+void cameraChanged(const MString &str, MObject &node, void *clientData)
+{
+	MGlobal::displayInfo("HEJ");
+}
 
 void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
@@ -269,18 +273,39 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug,
 void cameraCreated(MObject node)
 {
 	MFnCamera camera(node);
-	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(float)* 4 * 4);
+	NodeRemovedHeader camHeader;
+	camHeader.nameLength = camera.name().length() + 1;
+
+	MGlobal::displayInfo(MString() + camera.name());
+	bool isOrtho;
+	isOrtho = camera.isOrtho();
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(NodeRemovedHeader) + camera.name().length() + 1 + (sizeof(float)* 4 * 4) + sizeof(isOrtho));
 
 	MFloatMatrix projectionMatrix = camera.projectionMatrix();
 	float camMatrix[4][4];
 	projectionMatrix.get(camMatrix);
 
 	MessageType type = MessageType::mCamera;
+	UINT64 offset = 0;
+
 	memcpy(data, &type, sizeof(MessageType::mCamera));
+	offset += sizeof(MessageType::mCamera);
+
+	memcpy(&data[offset], &camHeader, sizeof(NodeRemovedHeader));
+	offset += sizeof(NodeRemovedHeader);
+
+	memcpy(&data[offset], camera.name().asChar(), camHeader.nameLength);
+	offset += camHeader.nameLength;
 
 	for (unsigned int i = 0; i < 4; i++)
-		memcpy(&data[sizeof(MessageType::mCamera) + sizeof(float)* 4 * i], camMatrix[i], sizeof(float)* 4);
-	gShared.write(data, sizeof(MessageType::mCamera) + sizeof(float)* 4 * 4);
+		memcpy(&data[offset + sizeof(float)* 4 * i], camMatrix[i], sizeof(float)* 4);
+
+	offset += sizeof(float)* 4 * 4;
+
+	memcpy(&data[offset], &isOrtho, sizeof(isOrtho));
+	offset += sizeof(isOrtho);
+
+	gShared.write(data, offset);
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(camera.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
