@@ -13,3 +13,5 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug,
 
 void nodeCreated(MObject &node, void *clientData);
 void nodeRemoval(MObject &node, void *clientData);
+
+void timer(float elapsedTime, float lastTime, void *clientData);

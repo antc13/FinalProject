@@ -4,10 +4,30 @@
 #include "SharedLayouts.h"
 #include "maya_includes.h"
 #include <vector>
+#include <list>
 
 using namespace std;
 
+struct MessageQueueStruct
+{
+	INT64 size = 0;
+	char* data = nullptr;
+
+	MessageQueueStruct(char* data, INT64 size)
+	{
+		this->data = new char[size];
+		memcpy(this->data, data, size);
+		this->size = size;
+	}
+
+	~MessageQueueStruct()
+	{
+		delete[] data;
+	}
+};
+
 Memory mem;
+list<MessageQueueStruct> messageQueue;
 
 void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void *clientData)
 {
@@ -122,7 +142,6 @@ void meshCreated(MObject node)
 		thisVertex.normal[1] = normal.y;
 		thisVertex.normal[2] = normal.z;
 		verteciesData.push_back(thisVertex);
-		MGlobal::displayInfo(MString() + thisVertex.pos[0] + " " + thisVertex.pos[1] + " " + thisVertex.pos[2] + " " + thisVertex.normal[0] + " " + thisVertex.normal[1] + " " + thisVertex.normal[2]);
 	}
 
 	MeshHeader meshHeader;
@@ -134,18 +153,32 @@ void meshCreated(MObject node)
 
 	// -- Copy message Type
 	MessageType type = MessageType::mNewMesh;
-	memcpy(data, &type, sizeof(MessageType::mNewMesh));
-	// -- Copy mesh header;
-	memcpy(&data[sizeof(MessageType::mNewMesh)], &meshHeader, sizeof(MeshHeader));
-	// -- Copy name;
-	memcpy(&data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader)], meshNode.name().asChar(), meshNode.name().length() + 1);
-	// -- Copy vertecies;
-	memcpy(&data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + meshNode.name().length() + 1], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
-	// -- Copy indecies;
-	memcpy(&data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + meshNode.name().length() + 1 + (sizeof(verteciesData[0]) * verteciesData.size())], triVerticesArray, sizeof(int)* triVertices.length());
 
-	gShared.write(data, sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + meshNode.name().length() + 1 + (sizeof(verteciesData[0]) * verteciesData.size()) + sizeof(int)* triVertices.length());
+	UINT64 offset = 0;
+
+	memcpy(&data[offset], &type, sizeof(MessageType::mNewMesh));
+	offset += sizeof(MessageType::mNewMesh);
+	// -- Copy mesh header;
+	memcpy(&data[offset], &meshHeader, sizeof(MeshHeader));
+	offset += sizeof(MeshHeader);
+	// -- Copy name;
+	memcpy(&data[offset], meshNode.name().asChar(), meshNode.name().length() + 1);
+	offset += meshNode.name().length() + 1;
+	// -- Copy vertecies;
+	memcpy(&data[offset], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
+	offset += sizeof(verteciesData[0]) * verteciesData.size();
+	// -- Copy indecies;
+	memcpy(&data[offset], triVerticesArray, sizeof(int)* triVertices.length());
+	offset += sizeof(int)* triVertices.length();
 	delete[] triVerticesArray;
+
+	if (messageQueue.size() == 0)
+		gShared.write(data, offset);
+	else
+	{
+		MessageQueueStruct queueData(data, offset);
+		messageQueue.push_back(queueData);
+	}
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
@@ -224,9 +257,14 @@ void meshVertecChanged(MObject node)
 			meshNode.getPoints(vertexPos, MSpace::kObject);
 			vector<VertexLayout>verteciesData;
 			VertexLayout thisVertex;
+			MVector normal;
 			for (unsigned int i = 0; i < vertexIDsAlreadySent.size(); i++)
 			{
+				meshNode.getVertexNormal(vertexIDsAlreadySent[i], true, normal, MSpace::kObject);
 				vertexPos[vertexIDsAlreadySent[i]].get(thisVertex.pos);
+				thisVertex.normal[0] = normal.x;
+				thisVertex.normal[1] = normal.y;
+				thisVertex.normal[2] = normal.z;
 				verteciesData.push_back(thisVertex);
 			}
 
@@ -254,7 +292,14 @@ void meshVertecChanged(MObject node)
 			memcpy(&data[offset], vertexIDsAlreadySent.data(), vertexIDsAlreadySent.size() * sizeof(vertexIDsAlreadySent[0]));
 			offset += vertexIDsAlreadySent.size() * sizeof(vertexIDsAlreadySent[0]);
 
-			gShared.write(data, offset);
+			if (messageQueue.size() == 0)
+				gShared.write(data, offset);
+			else
+			{
+				MessageQueueStruct queueData(data, offset);
+				messageQueue.push_back(queueData);
+			}
+
 			break;
 		}
 	}
@@ -284,7 +329,14 @@ void cameraCreated(MObject node)
 
 	for (unsigned int i = 0; i < 4; i++)
 		memcpy(&data[sizeof(MessageType::mCamera) + sizeof(float)* 4 * i], camMatrix[i], sizeof(float)* 4);
-	gShared.write(data, sizeof(MessageType::mCamera) + sizeof(float)* 4 * 4);
+
+	if (messageQueue.size() == 0)
+		gShared.write(data, sizeof(MessageType::mCamera) + sizeof(float) * 4 * 4);
+	else
+	{
+		MessageQueueStruct queueData(data, sizeof(MessageType::mCamera) + sizeof(float) * 4 * 4);
+		messageQueue.push_back(queueData);
+	}
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(camera.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
@@ -330,6 +382,25 @@ void nodeRemoval(MObject &node, void *clientData)
 		memcpy(&data[offset], tmp.name().asChar(), header.nameLength);
 		offset += header.nameLength;
 
-		gShared.write(data, offset);
+		if (messageQueue.size() == 0)
+			gShared.write(data, offset);
+		else
+		{
+			MessageQueueStruct queueData(data, offset);
+			messageQueue.push_back(queueData);
+		}
 	}
+	else if (node.hasFn(MFn::kTransform))
+	{
+		MCallbackIdArray ids;
+		MMessage::nodeCallbacks(node, ids);
+		MMessage::removeCallbacks(ids);
+	}
+}
+
+void timer(float elapsedTime, float lastTime, void *clientData)
+{
+	if (messageQueue.size() > 0)
+		while (gShared.write(messageQueue.front().data, messageQueue.front().size))
+			messageQueue.pop_front();
 }

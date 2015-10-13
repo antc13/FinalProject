@@ -44,6 +44,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 		}
 	}
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
+	idArray.append(MTimerMessage::addTimerCallback(5, timer));
 
 	MGlobal::displayInfo("Maya plugin loaded!");
 	// if res == kSuccess then the plugin has been loaded,
