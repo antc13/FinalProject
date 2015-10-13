@@ -11,64 +11,68 @@ Memory mem;
 
 void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void *clientData)
 {
-	MFnTransform transform(plug.node());
+	//MFnTransform transform(plug.node());
 
 	if (msg & MNodeMessage::kAttributeSet)
 	{
-		TransformHeader transformHeader;
-		MObject child = transform.child(0);
-		MFnDagNode fnChild(child);
-		transformHeader.itemNameLength = fnChild.name().length() + 1;
-
-		// Translations
-		MVector translation = transform.translation(MSpace::kPostTransform);
-		float translations[3];
-		translations[0] = translation.x;
-		translations[1] = translation.y;
-		translations[2] = translation.z;
-
-		double scale[3];
-
-		transform.getScale(scale);
-		float scaleF[3];
-		scaleF[0] = scale[0];
-		scaleF[1] = scale[1];
-		scaleF[2] = scale[2];
-
-		double tmp[4];
-		MQuaternion quat(tmp);
-		transform.getRotationQuaternion(quat.x, quat.y, quat.z, quat.w, MSpace::kPostTransform);
-
-		float quatF[4];
-		quatF[0] = quat.x;
-		quatF[1] = quat.y;
-		quatF[2] = quat.z;
-		quatF[3] = quat.w;
-
-		// Write to shared Mem
-		char *&data = mem.getAllocatedMemory(sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4);
-		MessageType type = MessageType::mTransform;
-		memcpy(data, &type, sizeof(MessageType::mTransform));
-		memcpy(&data[sizeof(MessageType::mTransform)], &transformHeader, sizeof(TransformHeader));
-
-		// Name
-		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)], fnChild.name().asChar(), fnChild.name().length() + 1);
-
-		//// Transforms
-		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1], translations, sizeof(float)* 3);
-		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3)], scaleF, sizeof(float)* 3);
-
-		memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3) + (sizeof(float) * 3)], quatF, sizeof(float) * 4);
-
-		gShared.write(data, sizeof(MessageType::mTransform) + sizeof(TransformHeader)+fnChild.name().length() + 1 + (sizeof(float)* 3) + (sizeof(float)* 3) + sizeof(float)* 4);
-
+		transformCreate(plug.node());
 		//MGlobal::displayInfo(MString() + "New translation: " + translation.x + " " + translation.y + " " + translation.z);
 		//MGlobal::displayInfo(MString() + "New scale: " + scale[0] + " " + scale[1] + " " + scale[2]);
 		//MGlobal::displayInfo(MString() + "New rotation: " + rotation.x * 180 / M_PI + " " + rotation.y * 180 / M_PI + " " + rotation.z * 180 / M_PI);
 	}
 
 }
+void transformCreate(MObject node)
+{
+	MFnTransform transform(node);
+	TransformHeader transformHeader;
+	MObject child = transform.child(0);
+	MFnDagNode fnChild(child);
+	transformHeader.itemNameLength = fnChild.name().length() + 1;
 
+	// Translations
+	MVector translation = transform.translation(MSpace::kPostTransform);
+	float translations[3];
+	translations[0] = translation.x;
+	translations[1] = translation.y;
+	translations[2] = translation.z;
+
+	double scale[3];
+
+	transform.getScale(scale);
+	float scaleF[3];
+	scaleF[0] = scale[0];
+	scaleF[1] = scale[1];
+	scaleF[2] = scale[2];
+
+	double tmp[4];
+	MQuaternion quat(tmp);
+	transform.getRotationQuaternion(quat.x, quat.y, quat.z, quat.w, MSpace::kPostTransform);
+
+	float quatF[4];
+	quatF[0] = quat.x;
+	quatF[1] = quat.y;
+	quatF[2] = quat.z;
+	quatF[3] = quat.w;
+
+	// Write to shared Mem
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3) + (sizeof(float) * 3) + sizeof(float) * 4);
+	MessageType type = MessageType::mTransform;
+	memcpy(data, &type, sizeof(MessageType::mTransform));
+	memcpy(&data[sizeof(MessageType::mTransform)], &transformHeader, sizeof(TransformHeader));
+
+	// Name
+	memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)], fnChild.name().asChar(), fnChild.name().length() + 1);
+
+	//// Transforms
+	memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1], translations, sizeof(float) * 3);
+	memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3)], scaleF, sizeof(float) * 3);
+
+	memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3) + (sizeof(float) * 3)], quatF, sizeof(float) * 4);
+
+	gShared.write(data, sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3) + (sizeof(float) * 3) + sizeof(float) * 4);
+
+}
 
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {

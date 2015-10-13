@@ -2,6 +2,7 @@
 #include "maya_includes.h"
 
 void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void *clientData);
+void transformCreate(MObject node);
 
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData);
 void meshCreated(MObject node);

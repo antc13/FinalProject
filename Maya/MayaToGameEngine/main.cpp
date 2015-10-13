@@ -33,11 +33,14 @@ EXPORT MStatus initializePlugin(MObject obj)
 		if (node.hasFn(MFn::kMesh))
 		{
 			meshCreated(node);
+			MFnDagNode thisNode(node);
+			transformCreate(thisNode.parent(0));
 		}
-
-		if (node.hasFn(MFn::kCamera))
+		else if (node.hasFn(MFn::kCamera))
 		{
 			cameraCreated(node);
+			MFnDagNode thisNode(node);
+			transformCreate(thisNode.parent(0));
 		}
 	}
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
