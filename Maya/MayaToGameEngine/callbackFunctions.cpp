@@ -307,7 +307,9 @@ void meshVertecChanged(MObject node)
 
 void cameraChanged(const MString &str, MObject &node, void *clientData)
 {
+	MFnDagNode thisNode(node);
 	cameraCreated(node);
+	transformCreate(thisNode.parent(0));
 	MGlobal::displayInfo("HEJ");
 }
 
