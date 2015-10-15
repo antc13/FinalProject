@@ -45,6 +45,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
 	idArray.append(MTimerMessage::addTimerCallback(5, timer));
+	idArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cameraChanged));
 
 	MGlobal::displayInfo("Maya plugin loaded!");
 	// if res == kSuccess then the plugin has been loaded,
@@ -57,7 +58,6 @@ EXPORT MStatus uninitializePlugin(MObject obj)
 	// simply initialize the Function set with the MObject that represents
 	// our plugin
 	MFnPlugin plugin(obj);
-	gShared.~SharedMemory();
 	MMessage::removeCallbacks(idArray);
 	// if any resources have been allocated, release and free here before
 	// returning...

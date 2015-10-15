@@ -17,12 +17,12 @@ void main::initialize()
     Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
     Material* boxMaterial = boxModel->getMaterial();
 	RenderState::StateBlock* block = RenderState::StateBlock::create();
-	block->setDepthFunction(RenderState::DepthFunction::DEPTH_LESS);
-	block->setFrontFace(RenderState::FrontFace::FRONT_FACE_CCW);
-	block->setDepthTest(true);
-	block->setCullFace(true);
-	block->setDepthWrite(true);
-	boxMaterial->setStateBlock(block);
+	//block->setDepthFunction(RenderState::DepthFunction::DEPTH_LESS);
+	//block->setFrontFace(RenderState::FrontFace::FRONT_FACE_CW);
+	//block->setDepthTest(true);
+	//block->setCullFace(true);
+	//block->setDepthWrite(true);
+	//boxMaterial->setStateBlock(block);
     // Set the aspect ratio for the scene's camera to match the current resolution
 
     _scene->getActiveCamera()->setAspectRatio(getAspectRatio());
@@ -43,6 +43,7 @@ void main::update(float elapsedTime)
 	{
 		if (type == MessageType::mNewMesh)
 		{
+			
 			Node* boxNode = _scene->findNode("box");
 			Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
 			Material* boxMaterial = boxModel->getMaterial();
@@ -70,7 +71,28 @@ void main::update(float elapsedTime)
 
 			MeshPart* meshPart = triMesh->addPart(Mesh::PrimitiveType::TRIANGLES, Mesh::IndexFormat::INDEX32, numIndex, true);
 			meshPart->setIndexData(index, 0, numIndex);
-				
+
+			//----- MATERIAL TEST--------------
+			char* texturePath;
+			Effect* effect = Effect::createFromFile("res/shaders/colored.vert", "res/shaders/colored.frag", "DIRECTIONAL_LIGHT_COUNT 1");
+			Material* material = Material::create(effect);
+			RenderState::StateBlock* block = RenderState::StateBlock::create();
+			block->setCullFace(true);
+			block->setDepthTest(true);
+			material->setStateBlock(block);
+			//Texture* tex = Texture::create(texturePath);
+			Node* lightNode = _scene->findNode("directionalLight");
+			//Bindings for vertex-shader
+			
+			material->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
+			material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
+			material->getParameter("u_directionalLightColor[0]")->setValue(lightNode->getLight()->getColor());//->bindValue(lightNode->getLight(), &Light::getColor);
+			material->getParameter("u_directionalLightDirection[0]")->setValue(lightNode->getForwardVectorView());//->bindValue(lightNode, &Node::getForwardVectorView);
+			//Bindings for fragment shader
+			material->setParameterAutoBinding("u_ambientColor", RenderState::AutoBinding::SCENE_AMBIENT_COLOR);
+			material->getParameter("u_diffuseColor")->setValue(Vector4(0.4, 0.4, 0.4, 1));
+			//----- MATERIAL TEST END---------
+			
 			Model* triModel = Model::create(triMesh);
 			triModel->setMaterial(boxMaterial);
 			triNode->setDrawable(triModel);
@@ -95,14 +117,20 @@ void main::update(float elapsedTime)
 			//Node* nodeChanged = _scene->findNode(name);
 			VertexLayout* vertexData = meshVertecies.find(name)->second;
 
-			for (UINT i = 0; i < numVerteciesChanged; i++)
-				vertexData[index[i]] = updatedVerteciesData[i];
+			//for (UINT i = 0; i < numVerteciesChanged; i++)
+			//	vertexData[index[i]] = updatedVerteciesData[i];
 
 			Model* mesh = dynamic_cast<Model*>(_scene->findNode(name)->getDrawable());
-			mesh->getMesh()->setVertexData((float*)vertexData);
+			mesh->getMesh()->setVertexData((float*)updatedVerteciesData);
 			delete[] index;
 			delete[] updatedVerteciesData;
 			delete[] name;
+		}
+		else if (type == MessageType::mMaterial)
+		{
+
+			//material->getParameter("u_directionalLightColor[0]")->bindValue()
+			
 		}
 		else if (type == MessageType::mTransform)
 		{

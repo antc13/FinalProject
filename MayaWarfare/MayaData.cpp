@@ -7,7 +7,7 @@ MayaData::MayaData(){
 }
 
 MayaData::~MayaData(){
-
+	delete[] data;
 }
 
 MessageType MayaData::read(){
@@ -64,8 +64,8 @@ void MayaData::getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*
 	memcpy(verteciesData, &data[offset], header->numVerteciesChanged * sizeof(VertexLayout));
 	offset += header->numVerteciesChanged * sizeof(VertexLayout);
 
-	indexNumbers = new UINT[header->numVerteciesChanged];
-	memcpy(indexNumbers, &data[offset], header->numVerteciesChanged * sizeof(UINT));
+	//indexNumbers = new UINT[header->numVerteciesChanged];
+	//memcpy(indexNumbers, &data[offset], header->numVerteciesChanged * sizeof(UINT));
 }
 
 void MayaData::getRemoveNode(char*& name)
