@@ -96,11 +96,6 @@ void main::update(float elapsedTime)
 			
 			//Bindings for vertex-shader
 
-			//_lighting->getTechnique(technique)->getParameter("u_ambientColor")->setValue(Vector3(0.0f, 0.0f, 0.0f));
-			//_lighting->getTechnique(technique)->getParameter("u_pointLightColor[0]")->setValue(Vector3(_redSlider->getValue(), _greenSlider->getValue(), _blueSlider->getValue()));
-			//_lighting->getTechnique(technique)->getParameter("u_pointLightPosition[0]")->bindValue(_pointLightNode, &Node::getTranslationView);
-			//_lighting->getTechnique(technique)->getParameter("u_pointLightRangeInverse[0]")->setValue(_pointLightNode->getLight()->getRangeInverse());
-
 			material->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
 			material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
 			material->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
@@ -119,7 +114,7 @@ void main::update(float elapsedTime)
 			triNode->setDrawable(triModel);
 			triNode->setEnabled(true);
 
-			//lightNode->setDrawable(triModel);
+			lightNode->setDrawable(triModel);
 			_scene->addNode(lightNode);
 
 			Node* copy = triNode->clone();
