@@ -44,9 +44,20 @@ void MayaData::getNewTransform(char*& name, float translation[3], float scale[3]
 	memcpy(rotation, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float) * 3], sizeof(float) * 4);
 }
 
-void MayaData::getNewCamera(float camMatrix[4][4])
+void MayaData::getNewCamera(char*& name, float camMatrix[4][4], bool* isOrtho)
 {
-	memcpy(camMatrix, &data[sizeof(MessageType::mCamera)], sizeof(float) * 4 * 4);
+	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mCamera)];
+	name = new char[header->nameLength];
+	UINT64 offset = sizeof(MessageType::mCamera) + sizeof(NodeRemovedHeader);
+	memcpy(name, &data[offset], header->nameLength);
+
+	offset += header->nameLength;
+
+	memcpy(camMatrix, &data[offset], sizeof(float) * 4 * 4);
+
+	offset += sizeof(float) * 4 * 4;
+
+	memcpy(isOrtho, &data[offset], sizeof(bool));
 }
 
 void MayaData::getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged)

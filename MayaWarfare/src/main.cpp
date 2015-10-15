@@ -27,6 +27,13 @@ void main::initialize()
 
     _scene->getActiveCamera()->setAspectRatio(getAspectRatio());
 	_scene->getActiveCamera()->getNode()->setId("perspShape");
+	perspCam = _scene->getActiveCamera();
+
+	Node* tmpNode = Node::create("topShape");
+	orthoCam = Camera::createOrthographic(0, 0, _scene->getActiveCamera()->getNearPlane(), _scene->getActiveCamera()->getAspectRatio(),_scene->getActiveCamera()->getFarPlane());
+	tmpNode->setCamera(orthoCam);
+	_scene->addNode(tmpNode);
+	//_scene->setActiveCamera(orthoCam);
 }
 
 void main::finalize()
@@ -155,17 +162,27 @@ void main::update(float elapsedTime)
 		}
 		else if (type == MessageType::mCamera)
 		{
+			char* name;
 			float camMatrix[4][4];
+			bool isOrtho = true;
 
-			mayaData.getNewCamera(camMatrix);
-
-			Matrix projectionMatrix(camMatrix[0][0], camMatrix[0][1], camMatrix[0][2], camMatrix[0][3],
-									camMatrix[1][0], camMatrix[1][1], camMatrix[1][2], camMatrix[1][3],
-									camMatrix[2][0], camMatrix[2][1], camMatrix[2][2], camMatrix[2][3],
-									camMatrix[3][0], camMatrix[3][1], camMatrix[3][2], camMatrix[3][3]);
+			mayaData.getNewCamera(name, camMatrix, &isOrtho);
 			
-			projectionMatrix.transpose();
-			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);	
+			Matrix projectionMatrix(camMatrix[0][0], camMatrix[1][0], camMatrix[2][0], camMatrix[3][0],
+									camMatrix[0][1], camMatrix[1][1], camMatrix[2][1], camMatrix[3][1],
+									camMatrix[0][2], camMatrix[1][2], camMatrix[2][2], camMatrix[3][2],
+									camMatrix[0][3], camMatrix[1][3], camMatrix[2][3], camMatrix[3][3]);
+			
+			//projectionMatrix.transpose();
+
+			if (isOrtho)
+				_scene->setActiveCamera(orthoCam);
+			else
+				_scene->setActiveCamera(perspCam);
+
+			_scene->getActiveCamera()->getNode()->setId(name);
+			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
+			
 		}
 		else if (type == MessageType::mNodeRemoved)
 		{

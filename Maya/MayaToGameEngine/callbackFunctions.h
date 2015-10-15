@@ -10,6 +10,7 @@ void meshVerteciesChanged(MPlug plug);
 
 void cameraCreated(MObject node);
 void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData);
+void cameraChanged(const MString &str, MObject &node, void *clientData);
 
 void nodeCreated(MObject &node, void *clientData);
 void nodeRemoval(MObject &node, void *clientData);

@@ -43,7 +43,17 @@ EXPORT MStatus initializePlugin(MObject obj)
 			transformCreate(thisNode.parent(0));
 		}
 	}
+	
+	M3dView view;
+	M3dView::get3dView(0, view);
+	MDagPath currentCamera;
+	view.getCamera(currentCamera);
+	MFnDagNode thisNode(currentCamera);
+	cameraCreated(thisNode.object());
+	transformCreate(thisNode.parent(0));
+
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
+	idArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cameraChanged));
 	idArray.append(MTimerMessage::addTimerCallback(5, timer));
 	idArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cameraChanged));
 
