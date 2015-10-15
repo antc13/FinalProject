@@ -81,29 +81,46 @@ void main::update(float elapsedTime)
 
 			//----- MATERIAL TEST--------------
 			char* texturePath;
-			Effect* effect = Effect::createFromFile("res/shaders/colored.vert", "res/shaders/colored.frag", "DIRECTIONAL_LIGHT_COUNT 1");
+			Effect* effect = Effect::createFromFile("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
 			Material* material = Material::create(effect);
 			RenderState::StateBlock* block = RenderState::StateBlock::create();
 			block->setCullFace(true);
 			block->setDepthTest(true);
 			material->setStateBlock(block);
 			//Texture* tex = Texture::create(texturePath);
-			Node* lightNode = _scene->findNode("directionalLight");
-			//Bindings for vertex-shader
+			Node* lightNode = Node::create("myLight");
+			Light* myLight = Light::createPoint(Vector3(0.8f, 0, 0), 20);
+			lightNode->setLight(myLight);
+
+			lightNode->setTranslation(0.0f, 10.0f, 0.0f);
 			
+			//Bindings for vertex-shader
+
+			//_lighting->getTechnique(technique)->getParameter("u_ambientColor")->setValue(Vector3(0.0f, 0.0f, 0.0f));
+			//_lighting->getTechnique(technique)->getParameter("u_pointLightColor[0]")->setValue(Vector3(_redSlider->getValue(), _greenSlider->getValue(), _blueSlider->getValue()));
+			//_lighting->getTechnique(technique)->getParameter("u_pointLightPosition[0]")->bindValue(_pointLightNode, &Node::getTranslationView);
+			//_lighting->getTechnique(technique)->getParameter("u_pointLightRangeInverse[0]")->setValue(_pointLightNode->getLight()->getRangeInverse());
+
 			material->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
 			material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
-			material->getParameter("u_directionalLightColor[0]")->setValue(lightNode->getLight()->getColor());//->bindValue(lightNode->getLight(), &Light::getColor);
-			material->getParameter("u_directionalLightDirection[0]")->setValue(lightNode->getForwardVectorView());//->bindValue(lightNode, &Node::getForwardVectorView);
+			material->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+			material->getParameter("u_pointLightColor[0]")->setValue(lightNode->getLight()->getColor());//->bindValue(lightNode->getLight(), &Light::getColor);
+			material->getParameter("u_pointLightRange[0]")->setValue(myLight->getRange());//->bindValue(lightNode, &Node::getForwardVectorView);
+			material->getParameter("u_pointLightPosition[0]")->bindValue(lightNode, &Node::getTranslationView);
+			material->getParameter("u_pointLightRangeInverse[0]")->setValue(lightNode->getLight()->getRangeInverse());
 			//Bindings for fragment shader
-			material->setParameterAutoBinding("u_ambientColor", RenderState::AutoBinding::SCENE_AMBIENT_COLOR);
-			material->getParameter("u_diffuseColor")->setValue(Vector4(0.4, 0.4, 0.4, 1));
+			//material->setParameterAutoBinding("u_ambientColor", RenderState::AutoBinding::SCENE_AMBIENT_COLOR);
+			material->getParameter("u_diffuseColor")->setValue(Vector4(myLight->getColor().x, myLight->getColor().y, myLight->getColor().z, 0));
+
 			//----- MATERIAL TEST END---------
 			
 			Model* triModel = Model::create(triMesh);
-			triModel->setMaterial(boxMaterial);
+			triModel->setMaterial(material);
 			triNode->setDrawable(triModel);
 			triNode->setEnabled(true);
+
+			//lightNode->setDrawable(triModel);
+			_scene->addNode(lightNode);
 
 			Node* copy = triNode->clone();
 			_scene->addNode(copy);
