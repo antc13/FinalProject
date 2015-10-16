@@ -786,15 +786,66 @@ void cameraCreated(MObject node)
 	gShared.write(data, offset);
 
 	if (messageQueue.size() == 0)
-		gShared.write(data, sizeof(MessageType::mCamera) + sizeof(float) * 4 * 4);
+		gShared.write(data, offset);
 	else
 	{
-		MessageQueueStruct queueData(data, sizeof(MessageType::mCamera) + sizeof(float) * 4 * 4);
+		MessageQueueStruct queueData(data, offset);
 		messageQueue.push_back(queueData);
 	}
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(camera.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
+}
+
+void lightAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
+{
+	MFnPointLight pointLight(p_Plug);
+	if (p_Msg & MNodeMessage::kAttributeSet)
+		lightChanged(p_Plug.node());
+
+}
+
+void lightChanged(MObject node)
+{
+	MFnPointLight pointLight(node);
+	MColor color;
+	color = pointLight.color();
+	float rbgValues[3];
+	rbgValues[0] = color.r;
+	rbgValues[1] = color.g;
+	rbgValues[2] = color.b;
+
+	float lightRange;
+	pointLight.findPlug("lightRadius").getValue(lightRange);
+
+	MessageType type = MessageType::mLight;
+
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mLight) + sizeof(float) * 4);
+
+	UINT64 offset = 0;
+
+	memcpy(data, &type, sizeof(MessageType::mLight));
+	offset += sizeof(MessageType::mLight);
+
+	memcpy(&data[offset], rbgValues, sizeof(float) * 3);
+	offset += sizeof(float) * 3;
+
+	memcpy(&data[offset], &lightRange, sizeof(float));
+	offset += sizeof(float);
+
+	gShared.write(data, offset);
+
+	if (messageQueue.size() == 0)
+		gShared.write(data, offset);
+	else
+	{
+		MessageQueueStruct queueData(data, offset);
+		messageQueue.push_back(queueData);
+	}
+
+	idArray.append(MNodeMessage::addAttributeChangedCallback(pointLight.parent(0), transformAttributeChanged));
+	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
+
 }
 
 
@@ -808,6 +859,11 @@ void nodeCreated(MObject &node, void *clientData)
 	if (node.hasFn(MFn::kCamera))
 	{ 
 		idArray.append(MNodeMessage::addAttributeChangedCallback(node, cameraAttributeChanged, clientData));
+	}
+
+	if (node.hasFn(MFn::kPointLight))
+	{
+		idArray.append(MNodeMessage::addAttributeChangedCallback(node, lightAttributeChanged, clientData));
 	}
 }
 
@@ -861,9 +917,4 @@ void timer(float elapsedTime, float lastTime, void *clientData)
 	if (messageQueue.size() > 0)
 		while (gShared.write(messageQueue.front().data, messageQueue.front().size))
 			messageQueue.pop_front();
-}
-
-void cameraChanged(const MString &str, MObject &node, void *clientData)
-{
-	MGlobal::displayInfo("HEJ");
 }

@@ -18,4 +18,5 @@ void nodeCallbackRemove(MObject &node);
 
 void timer(float elapsedTime, float lastTime, void *clientData);
 
-void cameraChanged(const MString &str, MObject &node, void *clientData);
+void lightChanged(MObject node);
+void lightAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData);

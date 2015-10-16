@@ -79,6 +79,22 @@ void MayaData::getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*
 	//memcpy(indexNumbers, &data[offset], header->numVerteciesChanged * sizeof(UINT));
 }
 
+void MayaData::getLight(float color[3], float& range)
+{
+	color[0] = 0;
+	color[1] = 0;
+	color[2] = 0;
+	range = 0;
+
+	UINT64 offset = sizeof(MessageType::mLight);
+	memcpy(color, &data[offset], sizeof(float) * 3);
+
+	offset += sizeof(float) * 3;
+
+	memcpy(&range, &data[offset], sizeof(float));
+
+}
+
 void MayaData::getRemoveNode(char*& name)
 {
 	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mNodeRemoved)];

@@ -42,6 +42,12 @@ EXPORT MStatus initializePlugin(MObject obj)
 			MFnDagNode thisNode(node);
 			transformCreate(thisNode.parent(0));
 		}
+		else if (node.hasFn(MFn::kLight))
+		{
+			lightChanged(node);
+			MFnDagNode thisNode(node);
+			transformCreate(thisNode.parent(0));
+		}
 	}
 	
 	M3dView view;

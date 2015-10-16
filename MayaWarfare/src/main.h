@@ -69,6 +69,7 @@ private:
 	std::vector<char*> camNames;
 	Camera* orthoCam;
 	Camera* perspCam;
+	std::vector<Material*> materials;
 };
 
 #endif
