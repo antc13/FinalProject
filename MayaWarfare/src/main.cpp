@@ -33,6 +33,7 @@ void main::initialize()
 	orthoCam = Camera::createOrthographic(0, 0, _scene->getActiveCamera()->getNearPlane(), _scene->getActiveCamera()->getAspectRatio(),_scene->getActiveCamera()->getFarPlane());
 	tmpNode->setCamera(orthoCam);
 	_scene->addNode(tmpNode);
+	tmpNode->release();
 	
 	Node* lightNode = Node::create("pointLightShape1");
 	Light* light = Light::createPoint(Vector3(0.5f, 0.5f, 0.5f), 20);
@@ -40,6 +41,17 @@ void main::initialize()
 	lightNode->translate(Vector3(0, 0, 0));
 	lightNode->getActiveCameraTranslationView();
 	_scene->addNode(lightNode);
+	lightNode->release();
+	light->release();
+
+	Node* dummyNode = Node::create("dummyNode");
+	Mesh* dummyMesh = Mesh::createQuad(Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0));
+	Model* dummyModel = Model::create(dummyMesh);
+	dummyNode->setDrawable(dummyModel);
+	_scene->addNode(dummyNode);
+	dummyNode->release();
+	dummyMesh->release();
+	dummyModel->release();
 
 }
 
@@ -202,6 +214,7 @@ void main::update(float elapsedTime)
 
 			_scene->getActiveCamera()->getNode()->setId(name);
 			_scene->getActiveCamera()->setProjectionMatrix(projectionMatrix);
+			delete[] name;
 			
 		}
 		else if (type == MessageType::mLight)
@@ -241,7 +254,7 @@ void main::update(float elapsedTime)
 		materials[i]->getParameter("u_pointLightRangeInverse[0]")->setValue(light->getRangeInverse());
 		materials[i]->getParameter("u_pointLightPosition[0]")->setValue(light->getNode()->getTranslationView());
 
-		Node* nud = _scene->findNode("pCubeShape1");
+		Node* nud = _scene->findNode("dummyNode");
 		Model* mod = dynamic_cast<Model*>(nud->getDrawable());
 		mod->setMaterial(materials[i]);
 
