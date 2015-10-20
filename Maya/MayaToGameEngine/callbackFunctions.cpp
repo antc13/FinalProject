@@ -21,10 +21,10 @@ struct MessageQueueStruct
 		this->size = size;
 	}
 
-	~MessageQueueStruct()
-	{
-		delete[] data;
-	}
+~MessageQueueStruct()
+{
+	delete[] data;
+}
 };
 
 Memory mem;
@@ -124,8 +124,89 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 		{
 			meshVerteciesChanged(p_Plug); 
 		}
+
+		if (plugName.find("instObjGroups") != std::string::npos)
+		{
+			materialCreated(p_Plug.node());
+		}
 	}
 }
+void materialAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
+{
+	MGlobal::displayInfo(MString() + " MAT CHANGE!!!");
+
+	MFnDependencyNode depNode(p_Plug);
+	MObject obj(depNode.object());
+	MFnMesh mee(obj);
+	MGlobal::displayInfo(MString() + mee.name().asChar());
+}
+
+void materialCreated(MObject node)
+{
+	MObjectArray shaders;
+	MIntArray indices;
+	MFnMesh meshNode(node);
+	meshNode.getConnectedShaders(0, shaders, indices);
+	float materialColor[3];
+	MString meshName;
+	meshName = meshNode.name();
+	for (UINT i = 0; i < shaders.length(); i++)
+	{
+		MPlugArray connections;
+		MFnDependencyNode shaderGroup(shaders[i]);
+		MPlug shaderPlug = shaderGroup.findPlug("surfaceShader");
+		shaderPlug.connectedTo(connections, true, false);
+		for (UINT k = 0; k < connections.length(); k++)
+		{
+			if (connections[k].node().hasFn(MFn::kLambert))
+			{
+				MGlobal::displayInfo(MString() + "LAMBERTZ!!!");
+				MFnLambertShader lambertShader(connections[k].node());
+				MColor color = lambertShader.color();
+				materialColor[0] = color.r;
+				materialColor[1] = color.g;
+				materialColor[2] = color.b;
+
+				MGlobal::displayInfo(MString() + color.r + " " + color.b + " " + color.g);
+
+			}
+			if (connections[k].node().hasFn(MFn::kPhong))
+			{
+				MGlobal::displayInfo(MString() + "BLINN!!!");
+			}
+
+			//idArray.append(MNodeMessage::addAttributeChangedCallback(connections[k].node(), materialAttributeChanged));
+		}
+	}
+
+	NodeRemovedHeader header;
+	header.nameLength = meshNode.name().length() + 1;
+	UINT64 offset = 0;
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mMaterial) + sizeof(NodeRemovedHeader) + header.nameLength + sizeof(float) * 3);
+	MessageType type = MessageType::mMaterial;
+
+	memcpy(data, &type, sizeof(MessageType::mMaterial));
+	offset += sizeof(MessageType::mMaterial);
+
+	memcpy(&data[offset], &header, sizeof(NodeRemovedHeader));
+	offset += sizeof(NodeRemovedHeader);
+
+	memcpy(&data[offset], meshNode.name().asChar(), header.nameLength);
+	offset += header.nameLength;
+
+	memcpy(&data[offset], materialColor, sizeof(float) * 3);
+	offset += sizeof(float) * 3;
+
+	if (messageQueue.size() == 0)
+		gShared.write(data, offset);
+	else
+	{
+		MessageQueueStruct queueData(data, offset);
+		messageQueue.push_back(queueData);
+	}
+
+}
+
 void test(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
 	std::string plugName(p_Plug.name().asChar());
@@ -154,6 +235,9 @@ void meshCreated(MObject &node)
 {
 	MGlobal::displayInfo("CreatMesh");
 	MFnMesh meshNode(node);
+
+	map<UINT, vector<UINT>> vertexToIndex;
+
 //
 //	//Variabler med VextrePos Data
 //	MFloatPointArray vertexPos;
@@ -355,6 +439,14 @@ void meshCreated(MObject &node)
 	}
 
 	//vertexIndexMap[meshNode.fullPathName().asChar()] = vertexToIndex;
+	// ----------------------------- Materials ----------------------------------------
+
+	// ----------------------------- Materials END ----------------------------------------
+
+	idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
+	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
+
+	materialCreated(node);
 }
 
 void meshVerteciesChanged(MPlug &plug)
@@ -779,7 +871,7 @@ void cameraCreated(MObject &node)
 
 	bool isOrtho;
 	isOrtho = camera.isOrtho();
-	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(NodeRemovedHeader) + camera.name().length() + 1 + (sizeof(float)* 4 * 4) + sizeof(isOrtho));
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(NodeRemovedHeader) + camera.name().length() + (sizeof(float)* 4 * 4) + sizeof(isOrtho));
 
 	MFloatMatrix projectionMatrix = camera.projectionMatrix();
 	float camMatrix[4][4];
@@ -804,8 +896,6 @@ void cameraCreated(MObject &node)
 
 	memcpy(&data[offset], &isOrtho, sizeof(isOrtho));
 	offset += sizeof(isOrtho);
-
-	gShared.write(data, offset);
 
 	if (messageQueue.size() == 0)
 		gShared.write(data, offset);
@@ -854,8 +944,6 @@ void lightChanged(MObject &node)
 
 	memcpy(&data[offset], &lightRange, sizeof(float));
 	offset += sizeof(float);
-
-	gShared.write(data, offset);
 
 	if (messageQueue.size() == 0)
 		gShared.write(data, offset);

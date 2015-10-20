@@ -126,15 +126,14 @@ void main::update(float elapsedTime)
 			material->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
 			material->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
 			material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
-			material->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
-
+			//material->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
 			//material->getParameter("u_pointLightColor[0]")->setValue(Vector3(1, 0, 0));//->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getColor);
 			material->getParameter("u_pointLightRange[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRange);
 			//material->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("pointLightShape1"), &Node::getTranslationView);
 			//material->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRangeInverse);
 			//Bindings for fragment shader
 			//material->setParameterAutoBinding("u_ambientColor", RenderState::AutoBinding::SCENE_AMBIENT_COLOR);
-			material->getParameter("u_diffuseColor")->setValue(Vector4(0.3f, 0.3f, 0.3f, 0));
+			//material->getParameter("u_diffuseColor")->setValue(Vector4(0.3f, 0.3f, 0.3f, 0));
 			materials.push_back(material);
 
 			//----- MATERIAL TEST END---------
@@ -177,6 +176,17 @@ void main::update(float elapsedTime)
 		}
 		else if (type == MessageType::mMaterial)
 		{
+			char* name;
+			float diffuseColor[3];
+			mayaData.getMaterial(name, diffuseColor);
+
+			Node* tmpNode = _scene->findNode(name);
+			Model* mesh = dynamic_cast<Model*>(tmpNode->getDrawable());
+			Material* material = mesh->getMaterial();
+
+			material->getParameter("u_ambientColor")->setValue(Vector3(diffuseColor[0], diffuseColor[1], diffuseColor[2]));
+			material->getParameter("u_diffuseColor")->setValue(Vector4(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1));
+			delete[] name;
 
 			//material->getParameter("u_directionalLightColor[0]")->bindValue()
 			

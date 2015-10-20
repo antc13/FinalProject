@@ -14,6 +14,7 @@ public:
 	void getNewCamera(char*& name, float camMatrix[4][4], bool* isortho);
 	void getNewTransform(char*& name, float translation[3], float scale[3], float rotation[4]);
 	void getLight(float color[3], float& range);
+	void getMaterial(char*& name, float diffuseColor[3]);
 
 
 	void getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged);
