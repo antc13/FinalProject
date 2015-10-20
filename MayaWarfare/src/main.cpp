@@ -69,7 +69,6 @@ void main::update(float elapsedTime)
 	{
 		if (type == MessageType::mNewMesh)
 		{
-			
 			Node* boxNode = _scene->findNode("box");
 			Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
 			Material* boxMaterial = boxModel->getMaterial();
@@ -79,18 +78,20 @@ void main::update(float elapsedTime)
 			UINT* index = nullptr;
 			UINT numIndex = 0;
 			char* name = nullptr;
-			mayaData.getNewMesh(name, verteciesData, numVertecies, index, numIndex);
 
-			Node* triNode = Node::create(name);
+			std::array<unsigned char, UUIDSIZE> UUID;
+			unsigned char tmpUUID[UUIDSIZE];
+			mayaData.getNewMesh(tmpUUID, name, verteciesData, numVertecies, index, numIndex);
+			for (std::array<unsigned char, UUIDSIZE>::iterator it = UUID.begin(); it != UUID.end(); it++)
+				*it = tmpUUID[it._Idx];
+
 			VertexFormat::Element elements[] = {
 				VertexFormat::Element(VertexFormat::POSITION, 3),
 				VertexFormat::Element(VertexFormat::NORMAL, 3) 
 			};
 			const VertexFormat vertFormat(elements, ARRAYSIZE(elements));
-
-			nodeNames.push_back(name);
 			
-			meshVertecies[name] = verteciesData;
+			meshVerteciesMap[UUID] = verteciesData;
 
 			Mesh* triMesh = Mesh::createMesh(vertFormat, numVertecies, true);
 			triMesh->setVertexData((float*)verteciesData, 0, numVertecies);
@@ -131,18 +132,11 @@ void main::update(float elapsedTime)
 			Model* triModel = Model::create(triMesh);
 			triModel->setMaterial(material);
 			//triNode->setLight(_scene->findNode("pointLightShape1")->getLight());
-			triNode->setDrawable(triModel);
-			triNode->setEnabled(true);
-
-			//lightNode->setDrawable(triModel);
+			
+			meshMap[UUID] = triModel;
 			//_scene->addNode(lightNode);
 
-			Node* copy = triNode->clone();
-			_scene->addNode(copy);
-			
-			triModel->release();
-			triMesh->release();
-			triNode->release();
+
 			delete[] index;
 		}
 		else if (type == MessageType::mVertexChange)
@@ -150,20 +144,22 @@ void main::update(float elapsedTime)
 			VertexLayout* updatedVerteciesData = nullptr;
 			UINT numVerteciesChanged = 0;
 			UINT* index = nullptr;
-			char* name = nullptr;
-			mayaData.getVertexChanged(name, updatedVerteciesData, index, numVerteciesChanged);
+			std::array<unsigned char, UUIDSIZE> UUID;
+			unsigned char tmpUUID[UUIDSIZE];
+			
+			mayaData.getVertexChanged(tmpUUID, updatedVerteciesData, index, numVerteciesChanged);
+			for (std::array<unsigned char, UUIDSIZE>::iterator it = UUID.begin(); it != UUID.end(); it++)
+				*it = tmpUUID[it._Idx];
 
 			//Node* nodeChanged = _scene->findNode(name);
-			VertexLayout* vertexData = meshVertecies.find(name)->second;
+			VertexLayout* vertexData = meshVerteciesMap.find(UUID)->second;
 
-			//for (UINT i = 0; i < numVerteciesChanged; i++)
-			//	vertexData[index[i]] = updatedVerteciesData[i];
+			for (UINT i = 0; i < numVerteciesChanged; i++)
+				vertexData[index[i]] = updatedVerteciesData[i];
 
-			Model* mesh = dynamic_cast<Model*>(_scene->findNode(name)->getDrawable());
-			mesh->getMesh()->setVertexData((float*)updatedVerteciesData);
+			//mesh->getMesh()->setVertexData((float*)updatedVerteciesData);
 			delete[] index;
 			delete[] updatedVerteciesData;
-			delete[] name;
 		}
 		else if (type == MessageType::mMaterial)
 		{
@@ -174,32 +170,85 @@ void main::update(float elapsedTime)
 		else if (type == MessageType::mTransform)
 		{
 			char* name;
+			char* parentName;
 			float translations[3];
 			float scale[3];
 			float rotation[4];
-
-			mayaData.getNewTransform(name, translations, scale, rotation);
+			ShapeType type;
+			std::array<unsigned char, UUIDSIZE> UUID;
+			unsigned char tmpUUID[UUIDSIZE];
+			std::array<unsigned char, UUIDSIZE> shapeUUID;
+			unsigned char tmpShapeUUID[UUIDSIZE];
+			
+			mayaData.getNewTransform(tmpUUID, tmpShapeUUID, type, name, parentName, translations, scale, rotation);
+			for (std::array<unsigned char, UUIDSIZE>::iterator it = UUID.begin(); it != UUID.end(); it++)
+				*it = tmpUUID[it._Idx];
+			for (std::array<unsigned char, UUIDSIZE>::iterator it = shapeUUID.begin(); it != shapeUUID.end(); it++)
+				*it = tmpShapeUUID[it._Idx];
 
 			Node* node = _scene->findNode(name);
-			if (node)
+			if (!node)
 			{
-				Quaternion newRot(rotation);
+				//Create new node
+				Node* newNode = Node::create(name);
+				if (type)
+				{
+					if (type == ShapeType::sMesh)
+						newNode->setDrawable(meshMap[shapeUUID]);
+					//else if (type == ShapeType::sCamera)
+						//newNode->setCamera(cameraMap)
+					//else if (type == ShapeType::sLight)
+				}
+				node = newNode->clone();
 
-				Vector3 newTrans(translations[0], translations[1], translations[2]);
+				if (parentName)
+				{
+					char* ParentID = nullptr;
+					std::string nodeNameString;
+					for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); it++)
+					{
+						nodeNameString = *it;
+						if (nodeNameString.compare(parentName) == 0)
+						{
+							ParentID = *it;
+							break;
+						}
+					}
+					Node* parent = _scene->findNode(ParentID);
+					parent->addChild(node);
+				}
+				else
+					_scene->addNode(node);
 
-				Vector3 newScale(scale);
-				node->set(newScale, newRot, newTrans);
+				SAFE_RELEASE(newNode);
+
+				nodeNames.push_back(name);		
+			} 
+			else
+			{
+				delete[] name;
 			}
-			delete[] name;
+			delete[] parentName;
+
+			Quaternion newRot(rotation);
+
+			Vector3 newTrans(translations[0], translations[1], translations[2]);
+
+			Vector3 newScale(scale);
+			node->set(newScale, newRot, newTrans);
 		}
 		else if (type == MessageType::mCamera)
 		{
 			char* name;
 			float camMatrix[4][4];
 			bool isOrtho = true;
-
-			mayaData.getNewCamera(name, camMatrix, &isOrtho);
+			std::array<unsigned char, UUIDSIZE> UUID;
+			unsigned char tmpUUID[UUIDSIZE];
 			
+			mayaData.getNewCamera(tmpUUID, name, camMatrix, &isOrtho);
+			for (std::array<unsigned char, UUIDSIZE>::iterator it = UUID.begin(); it != UUID.end(); it++)
+				*it = tmpUUID[it._Idx];
+
 			Matrix projectionMatrix(camMatrix[0][0], camMatrix[1][0], camMatrix[2][0], camMatrix[3][0],
 									camMatrix[0][1], camMatrix[1][1], camMatrix[2][1], camMatrix[3][1],
 									camMatrix[0][2], camMatrix[1][2], camMatrix[2][2], camMatrix[3][2],
@@ -229,12 +278,17 @@ void main::update(float elapsedTime)
 		else if (type == MessageType::mNodeRemoved)
 		{
 			char* name = nullptr;
+			std::array<unsigned char, UUIDSIZE> UUID;
+			unsigned char tmpUUID[UUIDSIZE];
+			
+			mayaData.getRemoveNode(tmpUUID,	name);
+			for (std::array<unsigned char, UUIDSIZE>::iterator it = UUID.begin(); it != UUID.end(); it++)
+				*it = tmpUUID[it._Idx];
 
-			mayaData.getRemoveNode(name);
-			if (meshVertecies.find(name) != meshVertecies.end())
+			if (meshVerteciesMap.find(UUID) != meshVerteciesMap.end())
 			{
-				delete[] meshVertecies.find(name)->second;
-				meshVertecies.erase(name);
+				delete[] meshVerteciesMap.find(UUID)->second;
+				meshVerteciesMap.erase(UUID);
 				_scene->removeNode(_scene->findNode(name));
 			}
 

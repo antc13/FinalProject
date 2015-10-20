@@ -10,15 +10,15 @@ public:
 
 	MessageType read();
 
-	void getNewMesh(char*& name, VertexLayout*& vertecies, UINT& numVertecies, UINT*& indecies, UINT& numIndecies);
-	void getNewCamera(char*& name, float camMatrix[4][4], bool* isortho);
-	void getNewTransform(char*& name, float translation[3], float scale[3], float rotation[4]);
+	void getNewMesh(unsigned char UUID[UUIDSIZE], char*& name, VertexLayout*& vertecies, UINT& numVertecies, UINT*& indecies, UINT& numIndecies);
+	void getNewCamera(unsigned char UUID[UUIDSIZE], char*& name, float camMatrix[4][4], bool* isortho);
+	void getNewTransform(unsigned char UUID[UUIDSIZE], unsigned char shapeUUID[UUIDSIZE], ShapeType& shapeType, char*& name, char*& parentName, float translation[3], float scale[3], float rotation[4]);
 	void getLight(float color[3], float& range);
 
 
-	void getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged);
+	void getVertexChanged(unsigned char UUID[UUIDSIZE], VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged);
 
-	void getRemoveNode(char*& name);
+	void getRemoveNode(unsigned char UUID[UUIDSIZE], char*& name);
 
 private:
 	SharedMemory shared;

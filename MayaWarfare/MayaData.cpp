@@ -16,39 +16,67 @@ MessageType MayaData::read(){
 	return MessageType::mNoMessage;
 }
 
-void MayaData::getNewMesh(char*& name, VertexLayout*& vertecies, UINT& numVertecies, UINT*& indecies, UINT& numIndecies){
+void MayaData::getNewMesh(unsigned char UUID[UUIDSIZE], char*& name, VertexLayout*& vertecies, UINT& numVertecies, UINT*& indecies, UINT& numIndecies){
 
-	MeshHeader* header = (MeshHeader*)&data[sizeof(MessageType::mNewMesh)];
+	memcpy(UUID, &data[sizeof(MessageType::mNewMesh)], UUIDSIZE);
+
+	MeshHeader* header = (MeshHeader*)&data[sizeof(MessageType::mNewMesh) + UUIDSIZE];
 	name = new char[header->nameLength];
-	memcpy(name, &data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader)], header->nameLength);
+	memcpy(name, &data[sizeof(MessageType::mNewMesh) + UUIDSIZE + sizeof(MeshHeader)], header->nameLength);
 
 	numVertecies = header->vertexCount;
 	vertecies = new VertexLayout[header->vertexCount];
-	memcpy(vertecies, &data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + header->nameLength], (header->vertexCount * sizeof(VertexLayout)));
+	memcpy(vertecies, &data[sizeof(MessageType::mNewMesh) + UUIDSIZE + sizeof(MeshHeader) + header->nameLength], (header->vertexCount * sizeof(VertexLayout)));
 
 	numIndecies = header->indexCount;
 	indecies = new UINT[header->indexCount];
-	memcpy(indecies, &data[sizeof(MessageType::mNewMesh) + sizeof(MeshHeader) + header->nameLength + (header->vertexCount * sizeof(VertexLayout))], header->indexCount * sizeof(UINT));
+	memcpy(indecies, &data[sizeof(MessageType::mNewMesh) + UUIDSIZE + sizeof(MeshHeader) + header->nameLength + (header->vertexCount * sizeof(VertexLayout))], header->indexCount * sizeof(UINT));
 }
 
-void MayaData::getNewTransform(char*& name, float translation[3], float scale[3], float rotation[4])
+void MayaData::getNewTransform(unsigned char UUID[UUIDSIZE], unsigned char shapeUUID[UUIDSIZE], ShapeType& shapeType, char*& name, char*& parentName, float translation[3], float scale[3], float rotation[4])
 {
-	TransformHeader* header = (TransformHeader*)&data[sizeof(MessageType::mTransform)];
+	UINT64 offset = sizeof(MessageType::mTransform);
+
+	memcpy(UUID, &data[offset], UUIDSIZE);
+	offset += UUIDSIZE;
+
+	TransformHeader* header = (TransformHeader*)&data[offset];
+	offset += sizeof(TransformHeader);
+
+	memcpy(&shapeType, &header->shape, sizeof(ShapeType));
+
+	memcpy(shapeUUID, &data[offset], UUIDSIZE);
+	offset += UUIDSIZE;
+
 	name = new char[header->itemNameLength];
-	memcpy(name, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)], header->itemNameLength);
+	memcpy(name, &data[offset], header->itemNameLength);
+	offset += header->itemNameLength;
 
-	memcpy(translation, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength], sizeof(float) * 3);
-	
-	memcpy(scale, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float) * 3], sizeof(float)* 3);
-	
-	memcpy(rotation, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float) * 3], sizeof(float) * 4);
+	if (header->parentNameLength > 0)
+	{
+		parentName = new char[header->parentNameLength];
+		memcpy(parentName, &data[offset], header->parentNameLength);
+		offset += header->parentNameLength;
+	}
+	else
+		parentName = nullptr;
+
+	memcpy(translation, &data[offset], sizeof(float) * 3);
+	offset += sizeof(float) * 3;
+
+	memcpy(scale, &data[offset], sizeof(float) * 3);
+	offset += sizeof(float) * 3;
+
+	memcpy(rotation, &data[offset], sizeof(float) * 4);
 }
 
-void MayaData::getNewCamera(char*& name, float camMatrix[4][4], bool* isOrtho)
+void MayaData::getNewCamera(unsigned char UUID[UUIDSIZE], char*& name, float camMatrix[4][4], bool* isOrtho)
 {
-	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mCamera)];
+	memcpy(UUID, &data[sizeof(MessageType::mCamera)], UUIDSIZE);
+
+	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mCamera) + UUIDSIZE];
 	name = new char[header->nameLength];
-	UINT64 offset = sizeof(MessageType::mCamera) + sizeof(NodeRemovedHeader);
+	UINT64 offset = sizeof(MessageType::mCamera) + UUIDSIZE + sizeof(NodeRemovedHeader);
 	memcpy(name, &data[offset], header->nameLength);
 
 	offset += header->nameLength;
@@ -60,11 +88,14 @@ void MayaData::getNewCamera(char*& name, float camMatrix[4][4], bool* isOrtho)
 	memcpy(isOrtho, &data[offset], sizeof(bool));
 }
 
-void MayaData::getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged)
+void MayaData::getVertexChanged(unsigned char UUID[UUIDSIZE], VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged)
 {
+	memcpy(UUID, &data[sizeof(MessageType::mVertexChange)], UUIDSIZE);
 	VertexChangeHeader* header = (VertexChangeHeader*)&data[sizeof(MessageType::mVertexChange)];
 	UINT64 offset = sizeof(MessageType::mVertexChange) + sizeof(VertexChangeHeader);
 
+	VertexChangeHeader* header = (VertexChangeHeader*)&data[sizeof(MessageType::mVertexChange) + UUIDSIZE];
+	UINT64 offset = sizeof(MessageType::mVertexChange) + UUIDSIZE + sizeof(VertexChangeHeader);
 	name = new char[header->nameLength];
 	memcpy(name, &data[offset], header->nameLength);
 	offset += header->nameLength;
@@ -79,7 +110,7 @@ void MayaData::getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*
 	//memcpy(indexNumbers, &data[offset], header->numVerteciesChanged * sizeof(UINT));
 }
 
-void MayaData::getLight(float color[3], float& range)
+void MayaData::getRemoveNode(unsigned char UUID[UUIDSIZE], char*& name)
 {
 	color[0] = 0;
 	color[1] = 0;
@@ -97,8 +128,10 @@ void MayaData::getLight(float color[3], float& range)
 
 void MayaData::getRemoveNode(char*& name)
 {
-	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mNodeRemoved)];
-	UINT64 offset = sizeof(MessageType::mNodeRemoved) + sizeof(NodeRemovedHeader);
+	memcpy(UUID, &data[sizeof(MessageType::mNodeRemoved)], UUIDSIZE);
+
+	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mNodeRemoved) + UUIDSIZE];
+	UINT64 offset = sizeof(MessageType::mNodeRemoved) + UUIDSIZE + sizeof(NodeRemovedHeader);
 
 	name = new char[header->nameLength];
 	memcpy(name, &data[offset], header->nameLength);
