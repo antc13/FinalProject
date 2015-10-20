@@ -95,6 +95,23 @@ void MayaData::getLight(float color[3], float& range)
 
 }
 
+void MayaData::getMaterial(char*& name, float diffuseColor[3])
+{
+
+	diffuseColor[0] = 0;
+	diffuseColor[1] = 0;
+	diffuseColor[2] = 0;
+	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mMaterial)];
+	UINT64 offset = sizeof(MessageType::mMaterial) + sizeof(NodeRemovedHeader);
+
+	name = new char[header->nameLength];
+	memcpy(name, &data[offset], header->nameLength);
+
+	offset += header->nameLength;
+
+	memcpy(diffuseColor, &data[offset], sizeof(float) * 3);
+}
+
 void MayaData::getRemoveNode(char*& name)
 {
 	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mNodeRemoved)];
