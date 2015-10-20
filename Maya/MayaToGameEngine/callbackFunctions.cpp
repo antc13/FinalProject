@@ -30,8 +30,6 @@ struct MessageQueueStruct
 Memory mem;
 list<MessageQueueStruct> messageQueue;
 
-map<string, map<UINT, vector<UINT>>> vertexIndexMap;
-
 void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &otherPlug, void *clientData)
 {
 	//MFnTransform transform(plug.node());
@@ -45,7 +43,7 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 	}
 
 }
-void transformCreate(MObject node)
+void transformCreate(MObject &node)
 {
 	MFnTransform transform(node);
 	TransformHeader transformHeader;
@@ -94,7 +92,6 @@ void transformCreate(MObject node)
 	memcpy(&data[sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3) + (sizeof(float) * 3)], quatF, sizeof(float) * 4);
 
 	gShared.write(data, sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3) + (sizeof(float) * 3) + sizeof(float) * 4);
-
 }
 
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
@@ -104,6 +101,7 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 
 	// Try to construct a MeshFn, if fails means the mesh is not ready
 	std::string plugName(p_Plug.name().asChar());
+	//MGlobal::displayInfo(p_Plug.name());
 	MStatus res;
 	MFnMesh meshNode(p_Plug.node(), &res);
 	if (res)
@@ -112,18 +110,50 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 		{
 			// is ready!, here you shoud have access to the whole MFnMesh object to access, query, extract information from the mesh
 			meshCreated(p_Plug.node());
+			idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
+			idArray.append(MNodeMessage::addNodePreRemovalCallback(meshNode.object(), nodeRemoval));
+			idArray.append(MPolyMessage::addPolyTopologyChangedCallback(meshNode.object(), meshTopologyChange));
 		}
-		else if (p_Plug.isArray() && p_Plug == MFnMesh(p_Plug.node()).findPlug("pnts") && p_Msg & MNodeMessage::AttributeMessage::kAttributeSet)
+		else if (plugName.find("inMesh") != std::string::npos)
 		{
-			meshVerteciesChanged(p_Plug);
+			MPlugArray plugArray;
+			if (p_Plug.connectedTo(plugArray, true, false))
+				idArray.append(MNodeMessage::addAttributeChangedCallback(plugArray[0].node(), test));
+		}
+		else if (p_Plug.isArray() && p_Plug == meshNode.findPlug("pnts"))
+		{
+			meshVerteciesChanged(p_Plug); 
 		}
 	}
 }
-
-void meshCreated(MObject node)
+void test(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
+	std::string plugName(p_Plug.name().asChar());
+	
+	if (p_Msg & MNodeMessage::AttributeMessage::kAttributeSet && plugName.find("cacheInput") == std::string::npos)
+	{
+		MPlugArray plugArray;
+		MFnDependencyNode thisNode(p_Plug.node());
+		MGlobal::displayInfo("HEJ HALLÅ: " + p_Plug.name());
+		MGlobal::displayInfo(p_Plug.node().apiTypeStr());
+		if (thisNode.findPlug("output").connectedTo(plugArray, false, true))
+		{
+			MFnDependencyNode tmp(plugArray[0].node());
+			MGlobal::displayInfo(tmp.name());
+			meshCreated(plugArray[0].node());
+		}
+		else
+		{
+			return;
+		}
+		
+		//meshCreated(*tmp);
+	}
+}
+void meshCreated(MObject &node)
+{
+	MGlobal::displayInfo("CreatMesh");
 	MFnMesh meshNode(node);
-	map<UINT, vector<UINT>> vertexToIndex;
 //
 //	//Variabler med VextrePos Data
 //	MFloatPointArray vertexPos;
@@ -240,68 +270,53 @@ void meshCreated(MObject node)
 	vector<VertexLayout> verteciesData;	
 	vector<UINT>indexArray;
 
-	MIntArray TrianglePerPolygon, TriangleVertexList;
-	meshNode.getTriangles(TrianglePerPolygon, TriangleVertexList);
+	MIntArray intdexOffsetVertexCount, vertecies, triangleList;
+	MPointArray dummy;
 
-	UINT TriangleVertexListOffset = 0;
-	for (int polygon = 0; polygon < meshNode.numPolygons(); polygon++)
+	UINT vertexIndex;
+	MVector normal;
+	MPoint pos;
+	VertexLayout thisVertex;
+	for (MItMeshPolygon meshPolyIter(node); !meshPolyIter.isDone(); meshPolyIter.next())
 	{
-		VertexLayout thisVertex;
-		MPoint thisPosition;
-		MVector thisNormal;
-		double thisNormalAsdouble[3];
-		for (int triangle = 0; triangle < TrianglePerPolygon[polygon]; triangle++)
+		vector<UINT> localVertexToGlobalIndex;
+		meshPolyIter.getVertices(vertecies);
+
+		meshPolyIter.getTriangles(dummy, triangleList);
+		UINT indexOffset = verteciesData.size();
+
+		//MItMeshPolygon polygon(node);
+		//int dummyInt;
+
+		//for (UINT i = 0; i < meshPolyIter.index(); i++)
+		//{
+		//	polygon.setIndex(i, dummyInt);
+		//	polygon.getVertices(intdexOffsetVertexCount);
+		//	indexOffset += intdexOffsetVertexCount.length();
+		//}
+		//
+		for (UINT i = 0; i < vertecies.length(); i++)
 		{
-			for (int vertex = 0; vertex < 3; vertex++)
-			{
-				meshNode.getPoint(TriangleVertexList[TriangleVertexListOffset], thisPosition);
-				meshNode.getFaceVertexNormal(polygon, TriangleVertexList[TriangleVertexListOffset], thisNormal);
-				thisPosition.get(thisVertex.pos);
-				thisNormal.get(thisNormalAsdouble);
+			vertexIndex = meshPolyIter.vertexIndex(i);
+			pos = meshPolyIter.point(i);
+			pos.get(thisVertex.pos);
 
-				thisVertex.normal[0] = thisNormalAsdouble[0];
-				thisVertex.normal[1] = thisNormalAsdouble[1];
-				thisVertex.normal[2] = thisNormalAsdouble[2];
+			meshPolyIter.getNormal(i, normal);
+			thisVertex.normal[0] = normal[0];
+			thisVertex.normal[1] = normal[1];
+			thisVertex.normal[2] = normal[2];
 
-				bool newVertex = true;
-				UINT index = 0;
-				vector<VertexLayout>::iterator it;
-				for (it = verteciesData.begin(); it < verteciesData.end(); it++)
-				{
-
-					if (it->pos[0] == thisVertex.pos[0] && it->pos[1] == thisVertex.pos[1] && it->pos[2] == thisVertex.pos[2] &&
-						it->normal[0] == thisVertex.normal[0] && it->normal[1] == thisVertex.normal[1] && it->normal[2] == thisVertex.normal[2])
-					{
-						if (!(find(vertexToIndex[TriangleVertexList[TriangleVertexListOffset]].begin(), vertexToIndex[TriangleVertexList[TriangleVertexListOffset]].end(), index) != vertexToIndex[TriangleVertexList[TriangleVertexListOffset]].end()))
-							vertexToIndex[TriangleVertexList[TriangleVertexListOffset]].push_back(index);
-						indexArray.push_back(index);
-						newVertex = false;
-						break;
-					}
-					index++;
-				}
-				if (newVertex)
-				{
-					if (!(find(vertexToIndex[TriangleVertexList[TriangleVertexListOffset]].begin(), vertexToIndex[TriangleVertexList[TriangleVertexListOffset]].end(), index) != vertexToIndex[TriangleVertexList[TriangleVertexListOffset]].end()))
-						vertexToIndex[TriangleVertexList[TriangleVertexListOffset]].push_back(index);
-					//MGlobal::displayInfo(MString() + thisVertex.pos[0] + " " + thisVertex.pos[1] + " " + thisVertex.pos[2] + " " + thisVertex.normal[0] + " " + thisVertex.normal[1] + " " + thisVertex.normal[2]);
-					verteciesData.push_back(thisVertex);
-					indexArray.push_back(index);
-				}
-
-				TriangleVertexListOffset++;
-			}
+			verteciesData.push_back(thisVertex);
+			localVertexToGlobalIndex.push_back(vertexIndex);
+		}
+		for (UINT i = 0; i < triangleList.length(); i++)
+		{
+			UINT k = 0;
+			while (localVertexToGlobalIndex[k] != triangleList[i])
+				k++;
+			indexArray.push_back(indexOffset + k);
 		}
 	}
-
-
-
-
-
-
-
-
-
 
 
 	MeshHeader meshHeader;
@@ -339,18 +354,15 @@ void meshCreated(MObject node)
 		messageQueue.push_back(queueData);
 	}
 
-	idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
-	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
-	vertexIndexMap[meshNode.fullPathName().asChar()] = vertexToIndex;
+	//vertexIndexMap[meshNode.fullPathName().asChar()] = vertexToIndex;
 }
 
-void meshVerteciesChanged(MPlug plug)
+void meshVerteciesChanged(MPlug &plug)
 {
 	//int index = plug.logicalIndex();
 	////MGlobal::displayInfo(plug.name());
 	////MGlobal::displayInfo(plug.node().apiTypeStr());
 	MFnMesh meshNode(plug.node());
-
 	//MFloatPointArray vertexPos;
 	//meshNode.getPoints(vertexPos, MSpace::kObject);
 
@@ -374,45 +386,51 @@ void meshVerteciesChanged(MPlug plug)
 	vector<VertexLayout> verteciesData;
 	vector<UINT>indexArray;
 
-	MIntArray TrianglePerPolygon, TriangleVertexList;
-	meshNode.getTriangles(TrianglePerPolygon, TriangleVertexList);
+	MIntArray intdexOffsetVertexCount, vertecies, triangleList;
+	MPointArray dummy;
 
-	UINT TriangleVertexListOffset = 0;
-	for (int polygon = 0; polygon < meshNode.numPolygons(); polygon++)
+	UINT vertexIndex;
+	MVector normal;
+	MPoint pos;
+	VertexLayout thisVertex;
+	for (MItMeshPolygon meshPolyIter(plug.node()); !meshPolyIter.isDone(); meshPolyIter.next())
 	{
-		VertexLayout thisVertex;
-		MPoint thisPosition;
-		MVector thisNormal;
-		double thisNormalAsdouble[3];
-		for (int triangle = 0; triangle < TrianglePerPolygon[polygon]; triangle++)
+		vector<UINT> localVertexToGlobalIndex;
+		meshPolyIter.getVertices(vertecies);
+
+		meshPolyIter.getTriangles(dummy, triangleList);
+		UINT indexOffset = verteciesData.size();
+
+		//MItMeshPolygon polygon(node);
+		//int dummyInt;
+
+		//for (UINT i = 0; i < meshPolyIter.index(); i++)
+		//{
+		//	polygon.setIndex(i, dummyInt);
+		//	polygon.getVertices(intdexOffsetVertexCount);
+		//	indexOffset += intdexOffsetVertexCount.length();
+		//}
+		//
+		for (UINT i = 0; i < vertecies.length(); i++)
 		{
-			for (int vertex = 0; vertex < 3; vertex++)
-			{
-				meshNode.getPoint(TriangleVertexList[TriangleVertexListOffset], thisPosition);
-				meshNode.getFaceVertexNormal(polygon, TriangleVertexList[TriangleVertexListOffset], thisNormal);
-				thisPosition.get(thisVertex.pos);
-				thisNormal.get(thisNormalAsdouble);
+			vertexIndex = meshPolyIter.vertexIndex(i);
+			pos = meshPolyIter.point(i);
+			pos.get(thisVertex.pos);
 
-				thisVertex.normal[0] = thisNormalAsdouble[0];
-				thisVertex.normal[1] = thisNormalAsdouble[1];
-				thisVertex.normal[2] = thisNormalAsdouble[2];
+			meshPolyIter.getNormal(i, normal);
+			thisVertex.normal[0] = normal[0];
+			thisVertex.normal[1] = normal[1];
+			thisVertex.normal[2] = normal[2];
 
-				bool newVertex = true;
-				vector<VertexLayout>::iterator it;
-				for (it = verteciesData.begin(); it < verteciesData.end(); it++)
-				{
-
-					if (it->pos[0] == thisVertex.pos[0] && it->pos[1] == thisVertex.pos[1] && it->pos[2] == thisVertex.pos[2] &&
-						it->normal[0] == thisVertex.normal[0] && it->normal[1] == thisVertex.normal[1] && it->normal[2] == thisVertex.normal[2])
-					{
-						newVertex = false;
-						break;
-					}
-				}
-				if (newVertex)
-					verteciesData.push_back(thisVertex);
-				TriangleVertexListOffset++;
-			}
+			verteciesData.push_back(thisVertex);
+			localVertexToGlobalIndex.push_back(vertexIndex);
+		}
+		for (UINT i = 0; i < triangleList.length(); i++)
+		{
+			UINT k = 0;
+			while (localVertexToGlobalIndex[k] != triangleList[i])
+				k++;
+			indexArray.push_back(indexOffset + k);
 		}
 	}
 
@@ -438,8 +456,8 @@ void meshVerteciesChanged(MPlug plug)
 	memcpy(&data[offset], verteciesData.data(), sizeof(verteciesData[0]) * verteciesData.size());
 	offset += sizeof(verteciesData[0]) * verteciesData.size();
 	// -- Copy indecies;
-	//memcpy(&data[offset], thisVertexIndecies.data(), sizeof(int)* thisVertexIndecies.size());
-	//offset += sizeof(int)* thisVertexIndecies.size();
+	//memcpy(&data[offset], indexArray.data(), sizeof(int)* indexArray.size());
+	//offset += sizeof(int)* indexArray.size();
 
 	if (messageQueue.size() == 0)
 		gShared.write(data, offset);
@@ -729,15 +747,19 @@ void meshVerteciesChanged(MPlug plug)
 	//			break;
 	//		}
 	//	}
-	}
-//}
+	//}
+}
+
+void meshTopologyChange(MObject &node, void *clientData)
+{
+	MGlobal::displayInfo("TopologyChange");
+}
 
 void cameraChanged(const MString &str, MObject &node, void *clientData)
 {
 	MFnDagNode thisNode(node);
 	cameraCreated(node);
 	transformCreate(thisNode.parent(0));
-	MGlobal::displayInfo("HEJ");
 }
 
 void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
@@ -749,7 +771,7 @@ void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug,
 	}
 }
 
-void cameraCreated(MObject node)
+void cameraCreated(MObject &node)
 {
 	MFnCamera camera(node);
 	NodeRemovedHeader camHeader;
@@ -805,7 +827,7 @@ void lightAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, 
 
 }
 
-void lightChanged(MObject node)
+void lightChanged(MObject &node)
 {
 	MFnPointLight pointLight(node);
 	MColor color;
@@ -910,6 +932,12 @@ void nodeCallbackRemove(MObject &node)
 	MCallbackIdArray ids;
 	MMessage::nodeCallbacks(node, ids);
 	MMessage::removeCallbacks(ids);
+
+	MCallbackId* tmp;
+	ids.get(tmp);
+
+	for (UINT i = 0; i < ids.length(); i++)
+		idArray.remove(tmp[i]);
 }
 
 void timer(float elapsedTime, float lastTime, void *clientData)
