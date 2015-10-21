@@ -94,6 +94,57 @@ void transformCreate(MObject &node)
 	gShared.write(data, sizeof(MessageType::mTransform) + sizeof(TransformHeader) + fnChild.name().length() + 1 + (sizeof(float) * 3) + (sizeof(float) * 3) + sizeof(float) * 4);
 }
 
+void meshy(MObject& node)
+{
+	MGlobal::displayInfo("MeshyMeshy");
+	MPlugArray plugArray;
+	MFnMesh meshNode(node);
+	MObjectArray objectArray;
+	MIntArray dummyArray;
+	meshNode.getConnectedShaders(0, objectArray, dummyArray);
+	MGlobal::displayInfo(MString() + "objectArray.Length() = " + objectArray.length());
+	if (objectArray.length() > 0)
+	{
+		MFnDependencyNode shader(objectArray[0]);
+		MPlug p_Plug = shader.findPlug("surfaceShader");
+		if (p_Plug.connectedTo(plugArray, true, false))
+		{
+			MFnDependencyNode depNode(plugArray[0].node());
+
+			MeshMaterialNamesHeader header;
+			header.meshNameLength = meshNode.name().length() + 1;
+			header.materialNameLength = depNode.name().length() + 1;
+
+			UINT64 offset = 0;
+
+			char *&data = mem.getAllocatedMemory(sizeof(MessageType::mMeshChangedMaterial) + sizeof(MeshMaterialNamesHeader)+header.meshNameLength + header.materialNameLength);
+			MessageType type = MessageType::mMeshChangedMaterial;
+
+			memcpy(data, &type, sizeof(MessageType::mMeshChangedMaterial));
+			offset += sizeof(MessageType::mMeshChangedMaterial);
+
+			memcpy(&data[offset], &header, sizeof(header));
+			offset += sizeof(header);
+
+			memcpy(&data[offset], meshNode.name().asChar(), header.meshNameLength);
+			offset += header.meshNameLength;
+
+			memcpy(&data[offset], depNode.name().asChar(), header.materialNameLength);
+			offset += header.materialNameLength;
+
+			if (messageQueue.size() == 0)
+			{
+				if (gShared.write(data, offset))
+				{
+					return;
+				}
+			}
+			MessageQueueStruct queueData(data, offset);
+			messageQueue.push_back(queueData);
+		}
+	}
+}
+
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
 	// obtain the node that contains this attribute
@@ -101,7 +152,7 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 
 	// Try to construct a MeshFn, if fails means the mesh is not ready
 	std::string plugName(p_Plug.name().asChar());
-	//MGlobal::displayInfo(p_Plug.name());
+	MGlobal::displayInfo(p_Plug.name());
 	MStatus res;
 	MFnMesh meshNode(p_Plug.node(), &res);
 	if (res)
@@ -109,7 +160,10 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 		if (plugName.find("doubleSided") != std::string::npos)
 		{
 			// is ready!, here you shoud have access to the whole MFnMesh object to access, query, extract information from the mesh
+			MGlobal::displayInfo("New Mesh");
+			MGlobal::displayInfo(node.name());
 			meshCreated(p_Plug.node());
+			meshy(p_Plug.node());
 			idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
 			idArray.append(MNodeMessage::addNodePreRemovalCallback(meshNode.object(), nodeRemoval));
 			idArray.append(MPolyMessage::addPolyTopologyChangedCallback(meshNode.object(), meshTopologyChange));
@@ -124,87 +178,83 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 		{
 			meshVerteciesChanged(p_Plug); 
 		}
-
-		if (plugName.find("instObjGroups") != std::string::npos)
+		else if (plugName.find("instObjGroups") != std::string::npos)
 		{
-			materialCreated(p_Plug.node());
+			meshy(p_Plug.node());
 		}
 	}
+}
+
+void materialChange(MObject &node)
+{
+	MFnDependencyNode depNode(node);
+	MGlobal::displayInfo(depNode.name());
+	MGlobal::displayInfo(node.apiTypeStr());
+	float materialColor[3];
+	MString materialName;
+
+	if (node.hasFn(MFn::kLambert))
+	{
+		MFnLambertShader lambertShader(node);
+		MColor color = lambertShader.color();
+		materialColor[0] = color.r;
+		materialColor[1] = color.g;
+		materialColor[2] = color.b;
+		materialName = lambertShader.name();
+	}
+
+	if (node.hasFn(MFn::kPhong))
+	{
+		MGlobal::displayInfo(MString() + "BLINN!!!");
+	}
+
+
+	NodeRemovedHeader header;
+	header.nameLength = materialName.length() + 1;
+	UINT64 offset = 0;
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mNewMaterial) + sizeof(NodeRemovedHeader)+header.nameLength + sizeof(float)* 3);
+	MessageType type = MessageType::mNewMaterial;
+
+	memcpy(data, &type, sizeof(MessageType::mNewMaterial));
+	offset += sizeof(MessageType::mNewMaterial);
+
+	memcpy(&data[offset], &header, sizeof(NodeRemovedHeader));
+	offset += sizeof(NodeRemovedHeader);
+
+	memcpy(&data[offset], materialName.asChar(), header.nameLength);
+	offset += header.nameLength;
+
+	memcpy(&data[offset], materialColor, sizeof(float)* 3);
+	offset += sizeof(float)* 3;
+
+	if (messageQueue.size() == 0)
+	{
+		if (gShared.write(data, offset))
+		{
+			return;
+		}
+	}
+	MessageQueueStruct queueData(data, offset);
+	messageQueue.push_back(queueData);
 }
 void materialAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
 	MGlobal::displayInfo(MString() + " MAT CHANGE!!!");
 
-	MFnDependencyNode depNode(p_Plug);
-	MObject obj(depNode.object());
-	MFnMesh mee(obj);
-	MGlobal::displayInfo(MString() + mee.name().asChar());
+	materialChange(p_Plug.node());
 }
 
-void materialCreated(MObject node)
+void materialCreated(MObject& node, void *clientData)
 {
-	MObjectArray shaders;
-	MIntArray indices;
-	MFnMesh meshNode(node);
-	meshNode.getConnectedShaders(0, shaders, indices);
-	float materialColor[3];
-	MString meshName;
-	meshName = meshNode.name();
-	for (UINT i = 0; i < shaders.length(); i++)
+	if (node.apiType() == MFn::kLambert)
 	{
-		MPlugArray connections;
-		MFnDependencyNode shaderGroup(shaders[i]);
-		MPlug shaderPlug = shaderGroup.findPlug("surfaceShader");
-		shaderPlug.connectedTo(connections, true, false);
-		for (UINT k = 0; k < connections.length(); k++)
-		{
-			if (connections[k].node().hasFn(MFn::kLambert))
-			{
-				MGlobal::displayInfo(MString() + "LAMBERTZ!!!");
-				MFnLambertShader lambertShader(connections[k].node());
-				MColor color = lambertShader.color();
-				materialColor[0] = color.r;
-				materialColor[1] = color.g;
-				materialColor[2] = color.b;
-
-				MGlobal::displayInfo(MString() + color.r + " " + color.b + " " + color.g);
-
-			}
-			if (connections[k].node().hasFn(MFn::kPhong))
-			{
-				MGlobal::displayInfo(MString() + "BLINN!!!");
-			}
-
-			//idArray.append(MNodeMessage::addAttributeChangedCallback(connections[k].node(), materialAttributeChanged));
-		}
+		MGlobal::displayInfo("materialCreated");
+		MGlobal::displayInfo(node.apiTypeStr());
+		MFnDependencyNode tmp(node);
+		MGlobal::displayInfo(tmp.name());
+		idArray.append(MNodeMessage::addAttributeChangedCallback(node, materialAttributeChanged));
+		materialChange(node);
 	}
-
-	NodeRemovedHeader header;
-	header.nameLength = meshNode.name().length() + 1;
-	UINT64 offset = 0;
-	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mMaterial) + sizeof(NodeRemovedHeader) + header.nameLength + sizeof(float) * 3);
-	MessageType type = MessageType::mMaterial;
-
-	memcpy(data, &type, sizeof(MessageType::mMaterial));
-	offset += sizeof(MessageType::mMaterial);
-
-	memcpy(&data[offset], &header, sizeof(NodeRemovedHeader));
-	offset += sizeof(NodeRemovedHeader);
-
-	memcpy(&data[offset], meshNode.name().asChar(), header.nameLength);
-	offset += header.nameLength;
-
-	memcpy(&data[offset], materialColor, sizeof(float) * 3);
-	offset += sizeof(float) * 3;
-
-	if (messageQueue.size() == 0)
-		gShared.write(data, offset);
-	else
-	{
-		MessageQueueStruct queueData(data, offset);
-		messageQueue.push_back(queueData);
-	}
-
 }
 
 void test(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
@@ -231,6 +281,7 @@ void test(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, v
 		//meshCreated(*tmp);
 	}
 }
+
 void meshCreated(MObject &node)
 {
 	MGlobal::displayInfo("CreatMesh");
@@ -430,23 +481,22 @@ void meshCreated(MObject &node)
 	memcpy(&data[offset], indexArray.data(), sizeof(int)* indexArray.size());
 	offset += sizeof(int)* indexArray.size();
 
-	if (messageQueue.size() == 0)
-		gShared.write(data, offset);
-	else
-	{
-		MessageQueueStruct queueData(data, offset);
-		messageQueue.push_back(queueData);
-	}
-
-	//vertexIndexMap[meshNode.fullPathName().asChar()] = vertexToIndex;
-	// ----------------------------- Materials ----------------------------------------
-
-	// ----------------------------- Materials END ----------------------------------------
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
 
-	materialCreated(node);
+	if (messageQueue.size() == 0)
+	{
+		if (gShared.write(data, offset))
+		{
+			return;
+		}
+	}
+	MessageQueueStruct queueData(data, offset);
+	messageQueue.push_back(queueData);
+
+	//vertexIndexMap[meshNode.fullPathName().asChar()] = vertexToIndex;
+
 }
 
 void meshVerteciesChanged(MPlug &plug)
@@ -552,12 +602,14 @@ void meshVerteciesChanged(MPlug &plug)
 	//offset += sizeof(int)* indexArray.size();
 
 	if (messageQueue.size() == 0)
-		gShared.write(data, offset);
-	else
 	{
-		MessageQueueStruct queueData(data, offset);
-		messageQueue.push_back(queueData);
+		if (gShared.write(data, offset))
+		{
+			return;
+		}
 	}
+	MessageQueueStruct queueData(data, offset);
+	messageQueue.push_back(queueData);
 
 	//MFnMesh meshNode(node);
 	//MPointArray verticesPos;
@@ -897,16 +949,20 @@ void cameraCreated(MObject &node)
 	memcpy(&data[offset], &isOrtho, sizeof(isOrtho));
 	offset += sizeof(isOrtho);
 
-	if (messageQueue.size() == 0)
-		gShared.write(data, offset);
-	else
-	{
-		MessageQueueStruct queueData(data, offset);
-		messageQueue.push_back(queueData);
-	}
-
 	idArray.append(MNodeMessage::addAttributeChangedCallback(camera.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
+
+	if (messageQueue.size() == 0)
+	{
+		if (gShared.write(data, offset))
+		{
+			return;
+		}
+	}
+	MessageQueueStruct queueData(data, offset);
+	messageQueue.push_back(queueData);
+
+
 }
 
 void lightAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
@@ -928,7 +984,8 @@ void lightChanged(MObject &node)
 	rbgValues[2] = color.b;
 
 	float lightRange;
-	pointLight.findPlug("lightRadius").getValue(lightRange);
+	lightRange = pointLight.centerOfIllumination();
+	//pointLight.findPlug("lightRadius").getValue(lightRange);
 
 	MessageType type = MessageType::mLight;
 
@@ -945,17 +1002,18 @@ void lightChanged(MObject &node)
 	memcpy(&data[offset], &lightRange, sizeof(float));
 	offset += sizeof(float);
 
-	if (messageQueue.size() == 0)
-		gShared.write(data, offset);
-	else
-	{
-		MessageQueueStruct queueData(data, offset);
-		messageQueue.push_back(queueData);
-	}
-
 	idArray.append(MNodeMessage::addAttributeChangedCallback(pointLight.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
 
+	if (messageQueue.size() == 0)
+	{
+		if (gShared.write(data, offset))
+		{
+			return;
+		}
+	}
+	MessageQueueStruct queueData(data, offset);
+	messageQueue.push_back(queueData);
 }
 
 
@@ -1002,12 +1060,14 @@ void nodeRemoval(MObject &node, void *clientData)
 		offset += header.nameLength;
 
 		if (messageQueue.size() == 0)
-			gShared.write(data, offset);
-		else
 		{
-			MessageQueueStruct queueData(data, offset);
-			messageQueue.push_back(queueData);
+			if (gShared.write(data, offset))
+			{
+				return;
+			}
 		}
+		MessageQueueStruct queueData(data, offset);
+		messageQueue.push_back(queueData);
 	}
 	else if (node.hasFn(MFn::kTransform))
 	{
@@ -1017,6 +1077,7 @@ void nodeRemoval(MObject &node, void *clientData)
 
 void nodeCallbackRemove(MObject &node)
 {
+	return;
 	MCallbackIdArray ids;
 	MMessage::nodeCallbacks(node, ids);
 	MMessage::removeCallbacks(ids);

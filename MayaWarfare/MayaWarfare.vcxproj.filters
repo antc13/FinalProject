@@ -90,6 +90,9 @@
     <ClInclude Include="..\Maya\MayaToGameEngine\SharedLayouts.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="OurMaterial.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">

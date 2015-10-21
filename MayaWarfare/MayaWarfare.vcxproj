@@ -194,6 +194,7 @@ xcopy ..\GamePlay\gameplay\res\ui res\ui\* /s /y /d</Command>
     <ClInclude Include="..\Maya\MayaToGameEngine\Memory.h" />
     <ClInclude Include="..\Maya\MayaToGameEngine\sharedMemory.h" />
     <ClInclude Include="..\Maya\MayaToGameEngine\SharedLayouts.h" />
+    <ClInclude Include="OurMaterial.h" />
     <ClInclude Include="MayaData.h" />
     <ClInclude Include="src\main.h" />
   </ItemGroup>

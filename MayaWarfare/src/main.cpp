@@ -8,6 +8,10 @@ main::main()
 {
 }
 
+Vector4 main::getBLAH() const {
+	return Vector4();
+}
+
 void main::initialize()
 {	
 	// Load game scene from file
@@ -17,6 +21,9 @@ void main::initialize()
     Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
     Material* boxMaterial = boxModel->getMaterial();
 	RenderState::StateBlock* block = RenderState::StateBlock::create();
+
+	boxMaterial->getParameter("u_diffusecolor")->bindValue(this, &main::getBLAH);
+
 	//block->setDepthFunction(RenderState::DepthFunction::DEPTH_LESS);
 	//block->setFrontFace(RenderState::FrontFace::FRONT_FACE_CW);
 	//block->setDepthTest(true);
@@ -39,7 +46,6 @@ void main::initialize()
 	Light* light = Light::createPoint(Vector3(0.5f, 0.5f, 0.5f), 20);
 	lightNode->setLight(light);
 	lightNode->translate(Vector3(0, 0, 0));
-	lightNode->getActiveCameraTranslationView();
 	_scene->addNode(lightNode);
 	lightNode->release();
 	light->release();
@@ -83,10 +89,14 @@ void main::update(float elapsedTime)
 			mayaData.getNewMesh(name, verteciesData, numVertecies, index, numIndex);
 
 			Node* triNode = _scene->findNode(name);
+			Material* material = nullptr;
 			if (triNode)
 			{
 				delete[] meshVertecies[name];
+				material = static_cast<Model*>(triNode->getDrawable())->getMaterial();
+				material->addRef();
 				_scene->removeNode(triNode);
+
 			}
 			else
 			{
@@ -110,37 +120,47 @@ void main::update(float elapsedTime)
 			meshPart->setIndexData(index, 0, numIndex);
 
 			//----- MATERIAL TEST--------------
-			char* texturePath;
-			Effect* effect = Effect::createFromFile("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
-			Material* material = Material::create(effect);
-			RenderState::StateBlock* block = RenderState::StateBlock::create();
-			block->setCullFace(true);
-			block->setDepthTest(true);
-			material->setStateBlock(block);
-			//Texture* tex = Texture::create(texturePath);
-			//Node* lightNode = _scene->findNode("pointLightShape1");
-			//Light* myLight = lightNode->getLight();
+			if (!material)
+			{
+				material = Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
+				RenderState::StateBlock* block = RenderState::StateBlock::create();
+				block->setCullFace(true);
+				block->setDepthTest(true);
+				block->setDepthWrite(true);
+				material->setStateBlock(block);
 
-			//Bindings for vertex-shader
+				//Texture* tex = Texture::create(texturePath);
+				//Node* lightNode = _scene->findNode("pointLightShape1");
+				//Light* myLight = lightNode->getLight();
 
-			material->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
-			material->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
-			material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
-			//material->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
-			//material->getParameter("u_pointLightColor[0]")->setValue(Vector3(1, 0, 0));//->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getColor);
-			material->getParameter("u_pointLightRange[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRange);
-			//material->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("pointLightShape1"), &Node::getTranslationView);
-			//material->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRangeInverse);
-			//Bindings for fragment shader
-			//material->setParameterAutoBinding("u_ambientColor", RenderState::AutoBinding::SCENE_AMBIENT_COLOR);
-			//material->getParameter("u_diffuseColor")->setValue(Vector4(0.3f, 0.3f, 0.3f, 0));
-			materials.push_back(material);
+				//Bindings for vertex-shader
 
+				material->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
+				material->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
+				material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
+
+				Light* light = _scene->findNode("pointLightShape1")->getLight();
+				//material->getParameter("u_pointLightColor[0]")->bindValue(light, &Light::getColor);
+				//material->getParameter("u_pointLightRangeInverse[0]")->bindValue(light, &Light::getRangeInverse);
+				//material->getParameter("u_pointLightPosition[0]")->bindValue(light->getNode(), &Node::getTranslationView);
+				material->getParameter("u_pointLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+				material->getParameter("u_pointLightRangeInverse[0]")->setValue(1.0f / 50.0f);
+				material->getParameter("u_pointLightPosition[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+
+				//material->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+				//material->getParameter("u_pointLightColor[0]")->setValue(Vector3(1, 0, 0));//->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getColor);
+				//material->getParameter("u_pointLightRange[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRange);
+				//material->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("pointLightShape1"), &Node::getTranslationView);
+				//material->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRangeInverse);
+				//Bindings for fragment shader
+				//material->setParameterAutoBinding("u_ambientColor", RenderState::AutoBinding::SCENE_AMBIENT_COLOR);
+				//material->getParameter("u_diffuseColor")->setValue(Vector4(0.3f, 0.3f, 0.3f, 0));
+			}
 			//----- MATERIAL TEST END---------
 
 			Model* triModel = Model::create(triMesh);
-			triModel->setMaterial(material);
 			//triNode->setLight(_scene->findNode("pointLightShape1")->getLight());
+			triModel->setMaterial(material);
 			triNode->setDrawable(triModel);
 
 			//lightNode->setDrawable(triModel);
@@ -174,22 +194,52 @@ void main::update(float elapsedTime)
 			delete[] updatedVerteciesData;
 			delete[] name;
 		}
-		else if (type == MessageType::mMaterial)
+		else if (type == MessageType::mNewMaterial)
 		{
 			char* name;
 			float diffuseColor[3];
 			mayaData.getMaterial(name, diffuseColor);
 
-			Node* tmpNode = _scene->findNode(name);
-			Model* mesh = dynamic_cast<Model*>(tmpNode->getDrawable());
-			Material* material = mesh->getMaterial();
+			ourMaterialMap[name].color.set(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1);
 
-			material->getParameter("u_ambientColor")->setValue(Vector3(diffuseColor[0], diffuseColor[1], diffuseColor[2]));
-			material->getParameter("u_diffuseColor")->setValue(Vector4(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1));
-			delete[] name;
 
+			int k = 0;
 			//material->getParameter("u_directionalLightColor[0]")->bindValue()
 			
+		}
+
+		else if (type == MessageType::mMeshChangedMaterial)
+		{
+			char* meshName;
+			char* materialName;
+
+			mayaData.getMeshMaterialNames(meshName, materialName);
+
+			char* nodeID = nullptr;
+			std::string nodeNameString;
+			for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); it++)
+			{
+				nodeNameString = *it;
+				if (nodeNameString.compare(meshName) == 0)
+				{
+					nodeID = *it;
+				}
+			}
+
+			if (nodeID)
+			{
+				Node* thisNode = _scene->findNode(nodeID);
+
+				Model* thisModel = dynamic_cast<Model*>(thisNode->getDrawable());
+				Material* thisMaterial = thisModel->getMaterial();
+
+				thisMaterial->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+				thisMaterial->getParameter("u_diffuseColor")->bindValue(&ourMaterialMap[materialName], &OurMaterial::getColor);		
+				int k = 0;
+			}
+
+			delete[] meshName;
+			delete[] materialName;
 		}
 		else if (type == MessageType::mTransform)
 		{
@@ -262,23 +312,11 @@ void main::update(float elapsedTime)
 		}
 		type = mayaData.read();
 	}
+
+
 	// Rotate model
 	_scene->findNode("box")->translateX(0.01f);
 	_scene->findNode("box")->rotateX(0.01f);
-
-	for (unsigned int i = 0; i < materials.size(); i++)
-	{
-		Light* light = _scene->findNode("pointLightShape1")->getLight();
-		materials[i]->getParameter("u_pointLightColor[0]")->setValue(Vector3(light->getColor().x, light->getColor().y, light->getColor().z));
-		//materials[i]->getParameter("u_pointLightRange[0]")->setValue(light->getRange());
-		materials[i]->getParameter("u_pointLightRangeInverse[0]")->setValue(light->getRangeInverse());
-		materials[i]->getParameter("u_pointLightPosition[0]")->setValue(light->getNode()->getTranslationView());
-
-		Node* nud = _scene->findNode("dummyNode");
-		Model* mod = dynamic_cast<Model*>(nud->getDrawable());
-		mod->setMaterial(materials[i]);
-
-	}
 
 	for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); ++it)
 	{
@@ -291,7 +329,7 @@ void main::update(float elapsedTime)
 void main::render(float elapsedTime)
 {
     // Clear the color and depth buffers
-    clear(CLEAR_COLOR_DEPTH, Vector4::zero(), 1.0f, 0);
+    clear(CLEAR_COLOR_DEPTH, Vector4(0,0,0.2f,1), 1.0f, 0);
 
     // Visit all the nodes in the scene for drawing
     _scene->visit(this, &main::drawScene);

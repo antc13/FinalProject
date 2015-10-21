@@ -101,8 +101,8 @@ void MayaData::getMaterial(char*& name, float diffuseColor[3])
 	diffuseColor[0] = 0;
 	diffuseColor[1] = 0;
 	diffuseColor[2] = 0;
-	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mMaterial)];
-	UINT64 offset = sizeof(MessageType::mMaterial) + sizeof(NodeRemovedHeader);
+	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mNewMaterial)];
+	UINT64 offset = sizeof(MessageType::mNewMaterial) + sizeof(NodeRemovedHeader);
 
 	name = new char[header->nameLength];
 	memcpy(name, &data[offset], header->nameLength);
@@ -110,6 +110,20 @@ void MayaData::getMaterial(char*& name, float diffuseColor[3])
 	offset += header->nameLength;
 
 	memcpy(diffuseColor, &data[offset], sizeof(float) * 3);
+}
+
+void MayaData::getMeshMaterialNames(char*& meshName, char*& materialName)
+{
+	MeshMaterialNamesHeader* header = (MeshMaterialNamesHeader*)&data[sizeof(MessageType::mMeshChangedMaterial)];
+	UINT64 offset = sizeof(MessageType::mMeshChangedMaterial) + sizeof(MeshMaterialNamesHeader);
+
+	meshName = new char[header->meshNameLength];
+	memcpy(meshName, &data[offset], header->meshNameLength);
+
+	offset += header->meshNameLength;
+
+	materialName = new char[header->materialNameLength];
+	memcpy(materialName, &data[offset], header->materialNameLength);
 }
 
 void MayaData::getRemoveNode(char*& name)

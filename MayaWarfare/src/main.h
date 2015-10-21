@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 #include "..\MayaData.h"
+#include "..\OurMaterial.h"
+
 
 
 using namespace gameplay;
@@ -21,7 +23,7 @@ public:
      * Constructor.
      */
     main();
-
+	Vector4 main::getBLAH() const;
     /**
      * @see Game::keyEvent
      */
@@ -69,7 +71,8 @@ private:
 	std::vector<char*> camNames;
 	Camera* orthoCam;
 	Camera* perspCam;
-	std::vector<Material*> materials;
+	std::map<std::string, OurMaterial> ourMaterialMap;
+	std::map<std::string, std::string> meshToMaterial;
 };
 
 #endif
