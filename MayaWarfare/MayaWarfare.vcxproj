@@ -188,6 +188,7 @@ xcopy ..\GamePlay\gameplay\res\ui res\ui\* /s /y /d</Command>
     <ClCompile Include="..\Maya\MayaToGameEngine\Memory.cpp" />
     <ClCompile Include="..\Maya\MayaToGameEngine\sharedMemory.cpp" />
     <ClCompile Include="MayaData.cpp" />
+    <ClCompile Include="OurMaterial.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>

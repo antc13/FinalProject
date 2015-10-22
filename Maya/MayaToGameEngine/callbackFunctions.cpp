@@ -68,7 +68,7 @@ void transformCreate(MObject &node)
 
 	double tmp[4];
 	MQuaternion quat(tmp);
-	transform.getRotationQuaternion(quat.x, quat.y, quat.z, quat.w, MSpace::kPostTransform);
+	transform.getRotationQuaternion(quat.x, quat.y, quat.z, quat.w, MSpace::kObject);
 
 	float quatF[4];
 	quatF[0] = quat.x;
@@ -96,13 +96,11 @@ void transformCreate(MObject &node)
 
 void meshy(MObject& node)
 {
-	MGlobal::displayInfo("MeshyMeshy");
 	MPlugArray plugArray;
 	MFnMesh meshNode(node);
 	MObjectArray objectArray;
 	MIntArray dummyArray;
 	meshNode.getConnectedShaders(0, objectArray, dummyArray);
-	MGlobal::displayInfo(MString() + "objectArray.Length() = " + objectArray.length());
 	if (objectArray.length() > 0)
 	{
 		MFnDependencyNode shader(objectArray[0]);
@@ -185,6 +183,21 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 	}
 }
 
+void textureChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, MPlug &p_Plug2, void *p_ClientData)
+{
+		//MPlug plug = depNode.findPlug("color", true);
+		MObject object;
+		MPlugArray allConnections;
+		plug.connectedTo(allConnections, false, true);
+
+		for (unsigned int i = 0; i < allConnections.length(); i++)
+		{
+			object = allConnections[i].node();
+			if (object.hasFn(MFn::kLambert))
+				materialChange(object);
+		}	
+}
+
 void materialChange(MObject &node)
 {
 	MFnDependencyNode depNode(node);
@@ -192,6 +205,9 @@ void materialChange(MObject &node)
 	MGlobal::displayInfo(node.apiTypeStr());
 	float materialColor[3];
 	MString materialName;
+	MString texturePath;
+	MObject object;
+	MPlugArray allConnections;
 
 	if (node.hasFn(MFn::kLambert))
 	{
@@ -200,6 +216,23 @@ void materialChange(MObject &node)
 		materialColor[0] = color.r;
 		materialColor[1] = color.g;
 		materialColor[2] = color.b;
+
+		MPlug plug = depNode.findPlug("color", true);
+		plug.connectedTo(allConnections, true, false);
+
+		for (unsigned int i = 0; i < allConnections.length(); i++)
+		{
+			object = allConnections[i].node();
+			if (object.hasFn(MFn::kFileTexture))
+			{
+				MFnDependencyNode texture_node(object);
+				MPlug filename = texture_node.findPlug("ftn");
+
+				texturePath =  filename.asString().asChar();
+				MGlobal::displayInfo(MString() + "TEXTURE PATH: " + texturePath);
+				break;
+			}
+		}
 		materialName = lambertShader.name();
 	}
 
@@ -209,20 +242,28 @@ void materialChange(MObject &node)
 	}
 
 
-	NodeRemovedHeader header;
-	header.nameLength = materialName.length() + 1;
+	MaterialHeader header;
+	header.materialNameLength = materialName.length() + 1;
+	if (texturePath.length() == 0)
+		header.texturePathLength = 0;
+	else
+		header.texturePathLength = texturePath.length() + 1;
+
 	UINT64 offset = 0;
-	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mNewMaterial) + sizeof(NodeRemovedHeader)+header.nameLength + sizeof(float)* 3);
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mNewMaterial) + sizeof(MaterialHeader)+header.materialNameLength + header.texturePathLength + sizeof(float)* 3);
 	MessageType type = MessageType::mNewMaterial;
 
 	memcpy(data, &type, sizeof(MessageType::mNewMaterial));
 	offset += sizeof(MessageType::mNewMaterial);
 
-	memcpy(&data[offset], &header, sizeof(NodeRemovedHeader));
-	offset += sizeof(NodeRemovedHeader);
+	memcpy(&data[offset], &header, sizeof(MaterialHeader));
+	offset += sizeof(MaterialHeader);
 
-	memcpy(&data[offset], materialName.asChar(), header.nameLength);
-	offset += header.nameLength;
+	memcpy(&data[offset], materialName.asChar(), header.materialNameLength);
+	offset += header.materialNameLength;
+
+	memcpy(&data[offset], texturePath.asChar(), header.texturePathLength);
+	offset += header.texturePathLength;
 
 	memcpy(&data[offset], materialColor, sizeof(float)* 3);
 	offset += sizeof(float)* 3;
@@ -244,8 +285,9 @@ void materialAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plu
 	materialChange(p_Plug.node());
 }
 
-void materialCreated(MObject& node, void *clientData)
+void materialCreated(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)
 {
+	MObject node = p_Plug.node();
 	if (node.apiType() == MFn::kLambert)
 	{
 		MGlobal::displayInfo("materialCreated");
@@ -284,7 +326,6 @@ void test(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, v
 
 void meshCreated(MObject &node)
 {
-	MGlobal::displayInfo("CreatMesh");
 	MFnMesh meshNode(node);
 
 	map<UINT, vector<UINT>> vertexToIndex;
@@ -411,6 +452,7 @@ void meshCreated(MObject &node)
 	UINT vertexIndex;
 	MVector normal;
 	MPoint pos;
+	float2 UV;
 	VertexLayout thisVertex;
 	for (MItMeshPolygon meshPolyIter(node); !meshPolyIter.isDone(); meshPolyIter.next())
 	{
@@ -440,6 +482,10 @@ void meshCreated(MObject &node)
 			thisVertex.normal[0] = normal[0];
 			thisVertex.normal[1] = normal[1];
 			thisVertex.normal[2] = normal[2];
+
+			meshPolyIter.getUV(i, UV);
+			thisVertex.texcoord[0] = UV[0];
+			thisVertex.texcoord[1] = UV[1];
 
 			verteciesData.push_back(thisVertex);
 			localVertexToGlobalIndex.push_back(vertexIndex);
@@ -534,6 +580,7 @@ void meshVerteciesChanged(MPlug &plug)
 	UINT vertexIndex;
 	MVector normal;
 	MPoint pos;
+	float2 UV;
 	VertexLayout thisVertex;
 	for (MItMeshPolygon meshPolyIter(plug.node()); !meshPolyIter.isDone(); meshPolyIter.next())
 	{
@@ -563,6 +610,10 @@ void meshVerteciesChanged(MPlug &plug)
 			thisVertex.normal[0] = normal[0];
 			thisVertex.normal[1] = normal[1];
 			thisVertex.normal[2] = normal[2];
+
+			meshPolyIter.getUV(i, UV);
+			thisVertex.texcoord[0] = UV[0];
+			thisVertex.texcoord[1] = UV[1];
 
 			verteciesData.push_back(thisVertex);
 			localVertexToGlobalIndex.push_back(vertexIndex);
@@ -1033,16 +1084,26 @@ void nodeCreated(MObject &node, void *clientData)
 	{
 		idArray.append(MNodeMessage::addAttributeChangedCallback(node, lightAttributeChanged, clientData));
 	}
-}
 
+	if (node.hasFn(MFn::kLambert))
+	{
+		idArray.append(MNodeMessage::addAttributeChangedCallback(node, materialCreated));
+	}
+
+	if (node.hasFn(MFn::kFileTexture))
+	{
+		MGlobal::displayInfo("FileTextureAdded");
+		idArray.append(MNodeMessage::addAttributeChangedCallback(node, textureChanged));
+	}
+}
 void nodeRemoval(MObject &node, void *clientData)
 {
 	if (node.hasFn(MFn::kMesh) || node.hasFn(MFn::kCamera))
 	{
-		nodeCallbackRemove(node);
+		MFnDependencyNode tmp(node);
 
 		NodeRemovedHeader header;
-		MFnDependencyNode tmp(node);
+	
 		header.nameLength = tmp.name().length() + 1;
 
 		MessageType type = MessageType::mNodeRemoved;
@@ -1069,24 +1130,6 @@ void nodeRemoval(MObject &node, void *clientData)
 		MessageQueueStruct queueData(data, offset);
 		messageQueue.push_back(queueData);
 	}
-	else if (node.hasFn(MFn::kTransform))
-	{
-		nodeCallbackRemove(node);
-	}
-}
-
-void nodeCallbackRemove(MObject &node)
-{
-	return;
-	MCallbackIdArray ids;
-	MMessage::nodeCallbacks(node, ids);
-	MMessage::removeCallbacks(ids);
-
-	MCallbackId* tmp;
-	ids.get(tmp);
-
-	for (UINT i = 0; i < ids.length(); i++)
-		idArray.remove(tmp[i]);
 }
 
 void timer(float elapsedTime, float lastTime, void *clientData)

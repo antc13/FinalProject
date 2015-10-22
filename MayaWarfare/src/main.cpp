@@ -75,7 +75,6 @@ void main::update(float elapsedTime)
 	{
 		if (type == MessageType::mNewMesh)
 		{
-			
 			Node* boxNode = _scene->findNode("box");
 			Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
 			Material* boxMaterial = boxModel->getMaterial();
@@ -92,11 +91,12 @@ void main::update(float elapsedTime)
 			Material* material = nullptr;
 			if (triNode)
 			{
+				alreadyExisting = true;
 				delete[] meshVertecies[name];
 				material = static_cast<Model*>(triNode->getDrawable())->getMaterial();
-				material->addRef();
+				if (material)
+					material->addRef();
 				_scene->removeNode(triNode);
-
 			}
 			else
 			{
@@ -105,11 +105,10 @@ void main::update(float elapsedTime)
 
 			VertexFormat::Element elements[] = {
 				VertexFormat::Element(VertexFormat::POSITION, 3),
-				VertexFormat::Element(VertexFormat::NORMAL, 3)
+				VertexFormat::Element(VertexFormat::NORMAL, 3),
+				VertexFormat::Element(VertexFormat::TEXCOORD0, 2)
 			};
-			const VertexFormat vertFormat(elements, ARRAYSIZE(elements));
-
-			nodeNames.push_back(name);
+			const VertexFormat vertFormat(elements, ARRAYSIZE(elements));		
 
 			meshVertecies[name] = verteciesData;
 
@@ -120,47 +119,49 @@ void main::update(float elapsedTime)
 			meshPart->setIndexData(index, 0, numIndex);
 
 			//----- MATERIAL TEST--------------
-			if (!material)
-			{
-				material = Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
-				RenderState::StateBlock* block = RenderState::StateBlock::create();
-				block->setCullFace(true);
-				block->setDepthTest(true);
-				block->setDepthWrite(true);
-				material->setStateBlock(block);
+			//if (!material)
+			//{
+				//material = Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+				//RenderState::StateBlock* block = RenderState::StateBlock::create();
+				//block->setCullFace(true);
+				//block->setDepthTest(true);
+				//block->setDepthWrite(true);
+				//material->setStateBlock(block);
 
-				//Texture* tex = Texture::create(texturePath);
-				//Node* lightNode = _scene->findNode("pointLightShape1");
-				//Light* myLight = lightNode->getLight();
+				////Texture* tex = Texture::create(texturePath);
+				////Node* lightNode = _scene->findNode("pointLightShape1");
+				////Light* myLight = lightNode->getLight();
 
-				//Bindings for vertex-shader
+				////Bindings for vertex-shader
 
-				material->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
-				material->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
-				material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
+				//material->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
+				//material->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
+				//material->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
 
-				Light* light = _scene->findNode("pointLightShape1")->getLight();
-				//material->getParameter("u_pointLightColor[0]")->bindValue(light, &Light::getColor);
-				//material->getParameter("u_pointLightRangeInverse[0]")->bindValue(light, &Light::getRangeInverse);
-				//material->getParameter("u_pointLightPosition[0]")->bindValue(light->getNode(), &Node::getTranslationView);
-				material->getParameter("u_pointLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
-				material->getParameter("u_pointLightRangeInverse[0]")->setValue(1.0f / 50.0f);
-				material->getParameter("u_pointLightPosition[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+				//Light* light = _scene->findNode("pointLightShape1")->getLight();
+				////material->getParameter("u_pointLightColor[0]")->bindValue(light, &Light::getColor);
+				////material->getParameter("u_pointLightRangeInverse[0]")->bindValue(light, &Light::getRangeInverse);
+				////material->getParameter("u_pointLightPosition[0]")->bindValue(light->getNode(), &Node::getTranslationView);
+				//material->getParameter("u_pointLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+				//material->getParameter("u_pointLightRangeInverse[0]")->setValue(1.0f / 50.0f);
+				//material->getParameter("u_pointLightPosition[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
 
-				//material->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
-				//material->getParameter("u_pointLightColor[0]")->setValue(Vector3(1, 0, 0));//->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getColor);
-				//material->getParameter("u_pointLightRange[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRange);
-				//material->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("pointLightShape1"), &Node::getTranslationView);
-				//material->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRangeInverse);
-				//Bindings for fragment shader
-				//material->setParameterAutoBinding("u_ambientColor", RenderState::AutoBinding::SCENE_AMBIENT_COLOR);
-				//material->getParameter("u_diffuseColor")->setValue(Vector4(0.3f, 0.3f, 0.3f, 0));
-			}
+
+				////material->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+				////material->getParameter("u_pointLightColor[0]")->setValue(Vector3(1, 0, 0));//->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getColor);
+				////material->getParameter("u_pointLightRange[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRange);
+				////material->getParameter("u_pointLightPosition[0]")->bindValue(_scene->findNode("pointLightShape1"), &Node::getTranslationView);
+				////material->getParameter("u_pointLightRangeInverse[0]")->bindValue(_scene->findNode("pointLightShape1")->getLight(), &Light::getRangeInverse);
+				////Bindings for fragment shader
+				////material->setParameterAutoBinding("u_ambientColor", RenderState::AutoBinding::SCENE_AMBIENT_COLOR);
+				////material->getParameter("u_diffuseColor")->setValue(Vector4(0.3f, 0.3f, 0.3f, 0));
+			//}
 			//----- MATERIAL TEST END---------
 
 			Model* triModel = Model::create(triMesh);
 			//triNode->setLight(_scene->findNode("pointLightShape1")->getLight());
-			triModel->setMaterial(material);
+			if (material)
+				triModel->setMaterial(material);
 			triNode->setDrawable(triModel);
 
 			//lightNode->setDrawable(triModel);
@@ -173,6 +174,10 @@ void main::update(float elapsedTime)
 			triMesh->release();
 			triNode->release();
 			delete[] index;
+			if (!alreadyExisting)
+				nodeNames.push_back(name);
+			else
+				delete[] name;
 		}
 		else if (type == MessageType::mVertexChange)
 		{
@@ -197,17 +202,171 @@ void main::update(float elapsedTime)
 		else if (type == MessageType::mNewMaterial)
 		{
 			char* name;
+			char* texturePath;
 			float diffuseColor[3];
-			mayaData.getMaterial(name, diffuseColor);
+			mayaData.getMaterial(name, texturePath, diffuseColor);
 
-			ourMaterialMap[name].color.set(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1);
+			bool modelsNeedNewMaterial = false;
 
+			OurMaterial& ThisOurMaterial = ourMaterialMap[name];
 
-			int k = 0;
+			//Check if material used Texture before but uses Color now. Then materials need updates in models.
+			if (ThisOurMaterial.diffuseTexFilePath.size() > 0 && !texturePath)
+			{		
+				ThisOurMaterial.diffuseTexFilePath = "";
+				ThisOurMaterial.texture->release();
+				ThisOurMaterial.texture = nullptr;
+				modelsNeedNewMaterial = true;
+			}
+			//Check if material used Color befor but uses Texture now. Then materials need updates in models.
+			else if (ThisOurMaterial.diffuseTexFilePath.size() == 0 && texturePath)
+			{
+				modelsNeedNewMaterial = true;
+			}
+
+			//If uses Texture set texture else set Color
+			if (texturePath)
+			{
+				if (ThisOurMaterial.texture)
+					ThisOurMaterial.texture->release();
+				ThisOurMaterial.diffuseTexFilePath = texturePath;
+				ThisOurMaterial.texture = Texture::Sampler::create(texturePath, false);
+				ThisOurMaterial.texture->setFilterMode(Texture::LINEAR, Texture::LINEAR);
+				ThisOurMaterial.texture->setWrapMode(Texture::CLAMP, Texture::CLAMP);
+			}
+			else
+				ourMaterialMap[name].color.set(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1);
+
+			//If models need update on material, then update them.
+			if (modelsNeedNewMaterial)
+			{
+				//loop tought all models;
+				for (std::map<char*, std::string>::iterator it = NodeIDToMaterial.begin(); it != NodeIDToMaterial.end(); it++)
+				{
+					//if model uses this material, then create a new updated
+					if (it->second.compare(name) == 0)
+					{
+						Material* newMaterial = nullptr;
+						if (ThisOurMaterial.diffuseTexFilePath.size() > 0)
+							newMaterial = Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+						else
+							newMaterial = Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
+						RenderState::StateBlock* block = RenderState::StateBlock::create();
+						block->setCullFace(true);
+						block->setCullFaceSide(RenderState::CullFaceSide::CULL_FACE_SIDE_BACK);
+						block->setDepthTest(true);
+						newMaterial->setStateBlock(block);
+						newMaterial->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
+						newMaterial->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
+						newMaterial->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
+
+						Light* light = _scene->findNode("pointLightShape1")->getLight();
+						newMaterial->getParameter("u_pointLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+						newMaterial->getParameter("u_pointLightRangeInverse[0]")->setValue(1.0f / 50.0f);
+						newMaterial->getParameter("u_pointLightPosition[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+						if (texturePath)
+							newMaterial->getParameter("u_diffuseTexture")->bindValue(&ourMaterialMap[name], &OurMaterial::getTexure);
+						else
+							newMaterial->getParameter("u_diffuseColor")->bindValue(&ourMaterialMap[name], &OurMaterial::getColor);
+
+						newMaterial->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+						
+						Node* thisNode = _scene->findNode(it->first);
+						Model* thisModel = static_cast<Model*>(thisNode->getDrawable());
+						thisModel->setMaterial(newMaterial);
+					}
+				}
+			}
+
+			//----------------TEST-----------------------
+			//Material* thisMaterial = materialMap[name];// = thisModel->getMaterial();
+			//
+			//bool isNew = false;
+			//
+			////If the material doesn't extist
+			//if (!thisMaterial)
+			//{
+			//	//Create new material that will render Texture or Color
+			//	if (texturePath)
+			//	{
+			//		thisMaterial = Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+			//		isNew = true;
+			//	}
+			//	else
+			//	{
+			//		thisMaterial = Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
+			//		isNew = true;
+			//	}
+			//}
+			//else //if Malterial alredy exist
+			//{
+			//	//check if material got color insted of texture
+			//	if (ThisOurMaterial.diffuseTexFilePath.size() > 0 && !texturePath)
+			//	{		
+			//		thisMaterial = Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
+			//		ThisOurMaterial.diffuseTexFilePath = "";
+			//		ThisOurMaterial.texture->release();
+			//		isNew = true;
+			//	}
+			//	//check material got texture insted of color
+			//	else if (ThisOurMaterial.diffuseTexFilePath.size() == 0 && texturePath)
+			//	{
+			//		thisMaterial = Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+			//		isNew = true;
+			//	}
+			//	
+			//}
+
+			//if (texturePath)
+			//{
+			//	ourMaterialMap[name].diffuseTexFilePath = texturePath;
+			//	ourMaterialMap[name].texture->release();
+			//	ourMaterialMap[name].texture = Texture::Sampler::create(texturePath, false);
+			//	ourMaterialMap[name].texture->setFilterMode(Texture::LINEAR, Texture::LINEAR);
+			//	ourMaterialMap[name].texture->setWrapMode(Texture::CLAMP, Texture::CLAMP);
+			//}
+			//else
+			//	ourMaterialMap[name].color.set(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1);
+
+			//if (isNew)
+			//{
+			//	RenderState::StateBlock* block = RenderState::StateBlock::create();
+			//	block->setCullFace(true);
+			//	block->setCullFaceSide(RenderState::CullFaceSide::CULL_FACE_SIDE_BACK);
+			//	block->setDepthTest(true);
+			//	thisMaterial->setStateBlock(block);
+			//	thisMaterial->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
+			//	thisMaterial->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
+			//	thisMaterial->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
+
+			//	Light* light = _scene->findNode("pointLightShape1")->getLight();
+			//	thisMaterial->getParameter("u_pointLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+			//	thisMaterial->getParameter("u_pointLightRangeInverse[0]")->setValue(1.0f / 50.0f);
+			//	thisMaterial->getParameter("u_pointLightPosition[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+			//	if (texturePath)
+			//		thisMaterial->getParameter("u_diffuseTexture")->bindValue(&ourMaterialMap[name], &OurMaterial::getTexure);
+			//	else
+			//		thisMaterial->getParameter("u_diffuseColor")->bindValue(&ourMaterialMap[name], &OurMaterial::getColor);
+			//
+			//	thisMaterial->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+
+			//	materialMap[name] = thisMaterial;
+
+			//	for (std::vector<char*>::iterator it = materialToNodeID[name].begin(); it != materialToNodeID[name].end(); it++)
+			//	{
+			//		Node* thisNode = _scene->findNode(*it);
+			//		Model* thisModel = static_cast<Model*>(thisNode->getDrawable());
+			//		thisModel->setMaterial(thisMaterial);
+			//	}
+			//}
+
+	
+
+			//----------------TEST-----------------------
+
 			//material->getParameter("u_directionalLightColor[0]")->bindValue()
 			
 		}
-
 		else if (type == MessageType::mMeshChangedMaterial)
 		{
 			char* meshName;
@@ -217,25 +376,94 @@ void main::update(float elapsedTime)
 
 			char* nodeID = nullptr;
 			std::string nodeNameString;
+			//Find the id for the node with this name
 			for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); it++)
 			{
 				nodeNameString = *it;
 				if (nodeNameString.compare(meshName) == 0)
 				{
 					nodeID = *it;
+					break;
 				}
 			}
 
+			//If we found an ID, then change material
 			if (nodeID)
 			{
-				Node* thisNode = _scene->findNode(nodeID);
+				//bool needNewMaterail = true;
+				//for (std::vector<char*>::iterator it = materialToNodeID[materialName].begin(); it != materialToNodeID[materialName].end(); it++)
+				//{
+				//	if (*it == nodeID)
+				//	{
+				//		needNewMaterail = false;
+				//		break;
+				//	}
+				//}
+				//if (needNewMaterail)
+				//{
+					Node* thisNode = _scene->findNode(nodeID);
+					Model* thisModel = static_cast<Model*>(thisNode->getDrawable());
+					Material* newMaterial = nullptr;
+					OurMaterial& ourMat = ourMaterialMap[materialName];
 
-				Model* thisModel = dynamic_cast<Model*>(thisNode->getDrawable());
-				Material* thisMaterial = thisModel->getMaterial();
+					//check if material use texture or color
+					if (ourMat.diffuseTexFilePath.size() > 0)
+						newMaterial = Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
+					else
+						newMaterial = Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
 
-				thisMaterial->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
-				thisMaterial->getParameter("u_diffuseColor")->bindValue(&ourMaterialMap[materialName], &OurMaterial::getColor);		
-				int k = 0;
+					RenderState::StateBlock* block = RenderState::StateBlock::create();
+					block->setCullFace(true);
+					block->setDepthTest(true);
+					newMaterial->setStateBlock(block);
+					newMaterial->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
+					newMaterial->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
+					newMaterial->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
+
+					Light* light = _scene->findNode("pointLightShape1")->getLight();
+					newMaterial->getParameter("u_pointLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+					newMaterial->getParameter("u_pointLightRangeInverse[0]")->setValue(1.0f / 50.0f);
+					newMaterial->getParameter("u_pointLightPosition[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+					if (ourMat.diffuseTexFilePath.size() > 0)
+						newMaterial->getParameter("u_diffuseTexture")->bindValue(&ourMat, &OurMaterial::getTexure);
+					else
+						newMaterial->getParameter("u_diffuseColor")->bindValue(&ourMat, &OurMaterial::getColor);
+
+					newMaterial->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+
+					thisModel->setMaterial(newMaterial);
+
+					NodeIDToMaterial[nodeID] = materialName;
+				//}
+				//std::string oldMaterialName;
+
+				////Check if it has an old material
+				//if (thisMaterial)
+				//{
+				//	//get old Material name
+				//	for (std::map<std::string, Material*>::iterator it = materialMap.begin(); it != materialMap.end(); it++)
+				//	{
+				//		if (it->second == thisMaterial)
+				//		{
+				//			oldMaterialName = it->first;
+				//			break;
+				//		}
+				//	}
+				//	UINT i = 0;
+				//	//Delete this node from material list
+				//	for (std::vector<char*>::iterator it = materialToNodeID[oldMaterialName].begin(); it != materialToNodeID[oldMaterialName].end(); it++)
+				//	{
+				//		if (*it == nodeID)
+				//		{
+				//			materialToNodeID[oldMaterialName].erase(materialToNodeID[oldMaterialName].begin() + i);
+				//			break;
+				//		}
+				//		i++;
+				//	}
+				//}
+
+				//thisModel->setMaterial(materialMap[materialName]);
+				//materialToNodeID[materialName].push_back(nodeID);
 			}
 
 			delete[] meshName;
@@ -318,7 +546,7 @@ void main::update(float elapsedTime)
 	_scene->findNode("box")->translateX(0.01f);
 	_scene->findNode("box")->rotateX(0.01f);
 
-	for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); ++it)
+	for(std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); ++it)
 	{
 		//_scene->findNode(*it)->rotateX(MATH_DEG_TO_RAD((float)elapsedTime / 1000.0f * 180.0f));
 		//_scene->findNode(*it)->translateX(-0.001f * i);

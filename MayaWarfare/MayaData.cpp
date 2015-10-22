@@ -95,19 +95,28 @@ void MayaData::getLight(float color[3], float& range)
 
 }
 
-void MayaData::getMaterial(char*& name, float diffuseColor[3])
+void MayaData::getMaterial(char*& name, char*& texturePath, float diffuseColor[3])
 {
 
 	diffuseColor[0] = 0;
 	diffuseColor[1] = 0;
 	diffuseColor[2] = 0;
-	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mNewMaterial)];
-	UINT64 offset = sizeof(MessageType::mNewMaterial) + sizeof(NodeRemovedHeader);
+	MaterialHeader* header = (MaterialHeader*)&data[sizeof(MessageType::mNewMaterial)];
+	UINT64 offset = sizeof(MessageType::mNewMaterial) + sizeof(MaterialHeader);
 
-	name = new char[header->nameLength];
-	memcpy(name, &data[offset], header->nameLength);
+	name = new char[header->materialNameLength];
+	memcpy(name, &data[offset], header->materialNameLength);
 
-	offset += header->nameLength;
+	offset += header->materialNameLength;
+
+	if (header->texturePathLength > 0)
+	{
+		texturePath = new char[header->texturePathLength];
+		memcpy(texturePath, &data[offset], header->texturePathLength);
+		offset += header->texturePathLength;
+	}
+	else
+		texturePath = nullptr;
 
 	memcpy(diffuseColor, &data[offset], sizeof(float) * 3);
 }

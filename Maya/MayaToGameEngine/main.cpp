@@ -25,22 +25,27 @@ EXPORT MStatus initializePlugin(MObject obj)
 	
 	MDagPath path;
 
-	MItDependencyNodes it(MFn::kLight);
+	MItDependencyNodes it(MFn::kInvalid);
 	for (; !it.isDone(); it.next())
 	{
 		MObject node = it.thisNode();
 		nodeCreated(node, nullptr);
-		lightChanged(node);
-		MFnDagNode thisNode(node);
-		transformCreate(thisNode.parent(0));
-	}
+		if (node.hasFn(MFn::kLight))
+		{
+			lightChanged(node);
+			MFnDagNode thisNode(node);
+			transformCreate(thisNode.parent(0));
+		}
 
-	it.reset(MFn::kLambert);
-	for (; !it.isDone(); it.next())
-	{
-		MObject node = it.thisNode();
-		nodeCreated(node, nullptr);
-		materialCreated(node);
+		if(node.hasFn(MFn::kLambert))
+			materialChange(node);
+
+		if (node.hasFn(MFn::kCamera))
+		{
+			cameraCreated(node);
+			MFnDagNode thisNode(node);
+			transformCreate(thisNode.parent(0));
+		}
 	}
 
 	it.reset(MFn::kMesh);
@@ -54,16 +59,6 @@ EXPORT MStatus initializePlugin(MObject obj)
 		meshy(node);
 	}
 
-	it.reset(MFn::kCamera);
-	for (; !it.isDone(); it.next())
-	{
-		MObject node = it.thisNode();
-		nodeCreated(node, nullptr);
-		cameraCreated(node);
-		MFnDagNode thisNode(node);
-		transformCreate(thisNode.parent(0));
-	}
-
 	M3dView view;
 	M3dView::get3dView(0, view);
 	MDagPath currentCamera;
@@ -75,7 +70,7 @@ EXPORT MStatus initializePlugin(MObject obj)
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
 	idArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cameraChanged));
 	idArray.append(MTimerMessage::addTimerCallback(0.003, timer));
-	idArray.append(MDGMessage::addNodeAddedCallback(materialCreated));
+	//idArray.append(MDGMessage::addNodeAddedCallback(materialCreated));
 
 	MGlobal::displayInfo("Maya plugin loaded!");
 	// if res == kSuccess then the plugin has been loaded,

@@ -24,7 +24,7 @@ void lightAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, 
 
 void test(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData);
 
-void materialCreated(MObject& node, void *clientData = nullptr);
+void materialCreated(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData);
 void materialAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData);
 void materialChange(MObject &node);
 void meshy(MObject& node);

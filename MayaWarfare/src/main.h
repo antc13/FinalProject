@@ -72,7 +72,9 @@ private:
 	Camera* orthoCam;
 	Camera* perspCam;
 	std::map<std::string, OurMaterial> ourMaterialMap;
-	std::map<std::string, std::string> meshToMaterial;
+	std::map<char*, std::string> NodeIDToMaterial;
+
+	//std::map<std::string, Material*> materialMap;
 };
 
 #endif

@@ -19,6 +19,7 @@ struct VertexLayout
 {
 	float pos[3];
 	float normal[3];
+	float texcoord[2];
 };
 
 struct NodeRemovedHeader
@@ -30,4 +31,10 @@ struct MeshMaterialNamesHeader
 {
 	INT meshNameLength;
 	INT materialNameLength;
+};
+
+struct MaterialHeader
+{
+	INT materialNameLength;
+	INT texturePathLength;
 };

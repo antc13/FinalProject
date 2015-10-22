@@ -107,5 +107,8 @@
     <ClCompile Include="MayaData.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="OurMaterial.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
