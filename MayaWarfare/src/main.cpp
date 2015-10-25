@@ -8,10 +8,6 @@ main::main()
 {
 }
 
-Vector4 main::getBLAH() const {
-	return Vector4();
-}
-
 void main::initialize()
 {	
 	// Load game scene from file
@@ -20,9 +16,6 @@ void main::initialize()
     Node* boxNode = _scene->findNode("box");
     Model* boxModel = dynamic_cast<Model*>(boxNode->getDrawable());
     Material* boxMaterial = boxModel->getMaterial();
-	RenderState::StateBlock* block = RenderState::StateBlock::create();
-
-	boxMaterial->getParameter("u_diffusecolor")->bindValue(this, &main::getBLAH);
 
 	//block->setDepthFunction(RenderState::DepthFunction::DEPTH_LESS);
 	//block->setFrontFace(RenderState::FrontFace::FRONT_FACE_CW);
@@ -213,6 +206,7 @@ void main::update(float elapsedTime)
 			//Check if material used Texture before but uses Color now. Then materials need updates in models.
 			if (ThisOurMaterial.diffuseTexFilePath.size() > 0 && !texturePath)
 			{		
+				ThisOurMaterial.diffuseTexFilePath.clear();
 				ThisOurMaterial.diffuseTexFilePath = "";
 				ThisOurMaterial.texture->release();
 				ThisOurMaterial.texture = nullptr;
@@ -229,6 +223,7 @@ void main::update(float elapsedTime)
 			{
 				if (ThisOurMaterial.texture)
 					ThisOurMaterial.texture->release();
+				ThisOurMaterial.diffuseTexFilePath.clear();
 				ThisOurMaterial.diffuseTexFilePath = texturePath;
 				ThisOurMaterial.texture = Texture::Sampler::create(texturePath, false);
 				ThisOurMaterial.texture->setFilterMode(Texture::LINEAR, Texture::LINEAR);
@@ -253,17 +248,17 @@ void main::update(float elapsedTime)
 							newMaterial = Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
 						RenderState::StateBlock* block = RenderState::StateBlock::create();
 						block->setCullFace(true);
-						block->setCullFaceSide(RenderState::CullFaceSide::CULL_FACE_SIDE_BACK);
 						block->setDepthTest(true);
 						newMaterial->setStateBlock(block);
 						newMaterial->setParameterAutoBinding("u_worldViewMatrix", RenderState::AutoBinding::WORLD_VIEW_MATRIX);
 						newMaterial->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
 						newMaterial->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
 
-						Light* light = _scene->findNode("pointLightShape1")->getLight();
-						newMaterial->getParameter("u_pointLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
-						newMaterial->getParameter("u_pointLightRangeInverse[0]")->setValue(1.0f / 50.0f);
-						newMaterial->getParameter("u_pointLightPosition[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+						Node* lightNode = _scene->findNode("pointLightShape1");
+						newMaterial->getParameter("u_pointLightColor[0]")->bindValue(lightNode->getLight(), &Light::getColor);
+						newMaterial->getParameter("u_pointLightRangeInverse[0]")->bindValue(lightNode->getLight(), &Light::getRangeInverse);
+						newMaterial->getParameter("u_pointLightPosition[0]")->bindValue(lightNode, &Node::getTranslationView);
+
 						if (texturePath)
 							newMaterial->getParameter("u_diffuseTexture")->bindValue(&ourMaterialMap[name], &OurMaterial::getTexure);
 						else
@@ -411,7 +406,7 @@ void main::update(float elapsedTime)
 						newMaterial = Material::create("res/shaders/textured.vert", "res/shaders/textured.frag", "POINT_LIGHT_COUNT 1");
 					else
 						newMaterial = Material::create("res/shaders/colored.vert", "res/shaders/colored.frag", "POINT_LIGHT_COUNT 1");
-
+					
 					RenderState::StateBlock* block = RenderState::StateBlock::create();
 					block->setCullFace(true);
 					block->setDepthTest(true);
@@ -420,10 +415,10 @@ void main::update(float elapsedTime)
 					newMaterial->setParameterAutoBinding("u_worldViewProjectionMatrix", RenderState::AutoBinding::WORLD_VIEW_PROJECTION_MATRIX);
 					newMaterial->setParameterAutoBinding("u_inverseTransposeWorldViewMatrix", RenderState::AutoBinding::INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX);
 
-					Light* light = _scene->findNode("pointLightShape1")->getLight();
-					newMaterial->getParameter("u_pointLightColor[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
-					newMaterial->getParameter("u_pointLightRangeInverse[0]")->setValue(1.0f / 50.0f);
-					newMaterial->getParameter("u_pointLightPosition[0]")->setValue(Vector3(1.0f, 1.0f, 1.0f));
+					Node* lightNode = _scene->findNode("pointLightShape1");
+					newMaterial->getParameter("u_pointLightColor[0]")->bindValue(lightNode->getLight(), &Light::getColor);
+					newMaterial->getParameter("u_pointLightRangeInverse[0]")->bindValue(lightNode->getLight(), &Light::getRangeInverse);
+					newMaterial->getParameter("u_pointLightPosition[0]")->bindValue(lightNode, &Node::getTranslationView);
 					if (ourMat.diffuseTexFilePath.size() > 0)
 						newMaterial->getParameter("u_diffuseTexture")->bindValue(&ourMat, &OurMaterial::getTexure);
 					else
@@ -502,7 +497,7 @@ void main::update(float elapsedTime)
 									camMatrix[0][1], camMatrix[1][1], camMatrix[2][1], camMatrix[3][1],
 									camMatrix[0][2], camMatrix[1][2], camMatrix[2][2], camMatrix[3][2],
 									camMatrix[0][3], camMatrix[1][3], camMatrix[2][3], camMatrix[3][3]);
-			
+
 			//projectionMatrix.transpose();
 
 			if (isOrtho)
