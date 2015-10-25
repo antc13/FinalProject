@@ -68,6 +68,7 @@ private:
 	MayaData mayaData;
 	std::vector<char*> nodeNames;
 	std::map<std::string, VertexLayout*> meshVertecies;
+	std::map<std::string, Mesh*> meshes;
 	std::vector<char*> camNames;
 	Camera* orthoCam;
 	Camera* perspCam;

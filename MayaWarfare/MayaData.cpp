@@ -60,6 +60,16 @@ void MayaData::getNewCamera(char*& name, float camMatrix[4][4], bool* isOrtho)
 	memcpy(isOrtho, &data[offset], sizeof(bool));
 }
 
+void MayaData::getCameraChanged(char*& name)
+{
+	NameHeader* header = (NameHeader*)&data[sizeof(MessageType::mCameraChanged)];
+	name = new char[header->nameLength];
+
+	UINT64 offset = sizeof(MessageType::mCameraChanged) + sizeof(NameHeader);
+	memcpy(name, &data[offset], header->nameLength);
+
+}
+
 void MayaData::getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged)
 {
 	VertexChangeHeader* header = (VertexChangeHeader*)&data[sizeof(MessageType::mVertexChange)];

@@ -12,11 +12,11 @@ public:
 
 	void getNewMesh(char*& name, VertexLayout*& vertecies, UINT& numVertecies, UINT*& indecies, UINT& numIndecies);
 	void getNewCamera(char*& name, float camMatrix[4][4], bool* isortho);
+	void getCameraChanged(char*& name);
 	void getNewTransform(char*& name, float translation[3], float scale[3], float rotation[4]);
 	void getLight(float color[3], float& range);
 	void getMaterial(char*& name, char*& texturePath, float diffuseColor[3]);
 	void getMeshMaterialNames(char*& meshName, char*& materialName);
-
 
 	void getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged);
 

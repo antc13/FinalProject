@@ -7,7 +7,6 @@ void transformCreate(MObject &node);
 void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData);
 void meshCreated(MObject &node);
 void meshVerteciesChanged(MPlug &plug);
-void meshTopologyChange(MObject &node, void *clientData);
 
 void cameraCreated(MObject &node);
 void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData);

@@ -164,7 +164,6 @@ void meshAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, M
 			meshy(p_Plug.node());
 			idArray.append(MNodeMessage::addAttributeChangedCallback(meshNode.parent(0), transformAttributeChanged));
 			idArray.append(MNodeMessage::addNodePreRemovalCallback(meshNode.object(), nodeRemoval));
-			idArray.append(MPolyMessage::addPolyTopologyChangedCallback(meshNode.object(), meshTopologyChange));
 		}
 		else if (plugName.find("inMesh") != std::string::npos)
 		{
@@ -330,119 +329,6 @@ void meshCreated(MObject &node)
 
 	map<UINT, vector<UINT>> vertexToIndex;
 
-//
-//	//Variabler med VextrePos Data
-//	MFloatPointArray vertexPos;
-//	meshNode.getPoints(vertexPos, MSpace::kObject);
-//
-//	//Variabler med Normal Data
-//	//vector<float*> normals;
-//
-//	//Variabler med UV data
-//	MFloatArray u_texture;
-//	MFloatArray v_texture;
-//	meshNode.getUVs(u_texture, v_texture);
-//	vector<int>uvIDs;
-//
-//	//Variabler med Index Data
-//	MIntArray triPerPolygonCount;
-//	MIntArray triVertecies;
-//	int* triVerteciesAsInt= nullptr;
-//	meshNode.getTriangles(triPerPolygonCount, triVertecies);
-//	triVerteciesAsInt = new int[triVertecies.length()];
-//	triVertecies.get(triVerteciesAsInt);
-//	vector<UINT>indexArray;
-//
-//	for (UINT i = 0; i < triPerPolygonCount.length(); i++)
-//	{
-//		for (UINT k = 0; k < 3; k++)
-//		{
-//			int tmp;
-//			meshNode.getPolygonUVid(i, k, tmp);
-//			uvIDs.push_back(tmp);
-//		}
-//	}
-//	//int* triVerticesArray;
-//	//triVerticesArray = new int[triVertices.length()];
-//	//triVertices.get(triVerticesArray);
-//
-//	//------------ TEST ------------ TEST ------------ TEST ------------ TEST ------------ TEST ------------ TEST ------------ TEST ------------ TEST 
-//
-//	//UINT normalOffset = 0;
-//	//MVector tmpNormalVector;
-//	//double tmpNormalDouble[3];
-//
-//	//for (UINT i = 0; i < meshNode.numPolygons(); i++)
-//	//{
-//	//	MFloatVectorArray normalsTest;
-//	//	for (UINT k = 0; k < triPerPolygonCount[i]; k++)
-//	//	{
-//	//		for (UINT L = 0; L < 3; L++)
-//	//		{
-//	//			float* tmpNormalFloat = new float[3];
-//	//			meshNode.getFaceVertexNormal(i, triVertecies[normalOffset], tmpNormalVector);
-//	//			tmpNormalVector.get(tmpNormalDouble);
-//	//			tmpNormalFloat[0] = tmpNormalDouble[0];
-//	//			tmpNormalFloat[1] = tmpNormalDouble[1];
-//	//			tmpNormalFloat[2] = tmpNormalDouble[2];
-//	//			normals.push_back(tmpNormalFloat);
-//	//			//MGlobal::displayInfo(MString() + tmpNormalFloat[0] + " " + tmpNormalFloat[1] + " " + tmpNormalFloat[2]);
-//	//			normalOffset++;
-//	//		}
-//	//	}
-//	//}
-//
-//	//-------- END TEST -------- END TEST -------- END TEST -------- END TEST -------- END TEST -------- END TEST -------- END TEST -------- END TEST
-//
-//	vector<VertexLayout> verteciesData;
-//
-//	VertexLayout thisVertex;
-//
-//	MFloatVectorArray normals;
-//	meshNode.getNormals(normals);
-//	MVector Normal;
-//	float normalF[3];
-//	MItMeshVertex vertexIter(meshNode.object());
-//	
-//	for (UINT i = 0; i < triVertecies.length(); i++)
-//	{
-//		normals[triVertecies[i]].get(thisVertex.normal);
-//		vertexPos[triVertecies[i]].get(thisVertex.pos);
-//		//thisVertex.normal[0] = normals.at(i)[0];
-//		//thisVertex.normal[1] = normals.at(i)[1];
-//		//thisVertex.normal[2] = normals.at(i)[2];
-//		//MGlobal::displayInfo(MString() + thisVertex.pos[0] + " " + thisVertex.pos[1] + " " + thisVertex.pos[2] + " " + thisVertex.normal[0] + " " + thisVertex.normal[1] + " " + thisVertex.normal[2]);
-//		bool newVertex = true;
-//		vector<VertexLayout>::iterator it;
-//		UINT index = 0;
-//		for (it = verteciesData.begin(); it < verteciesData.end(); it++)
-//		{
-//
-//			if (it->pos[0] == thisVertex.pos[0] && it->pos[1] == thisVertex.pos[1] && it->pos[2] == thisVertex.pos[2] &&
-//				it->normal[0] == thisVertex.normal[0] && it->normal[1] == thisVertex.normal[1] && it->normal[2] == thisVertex.normal[2])
-//			{
-//				if (!(find(vertexToIndex[triVertecies[i]].begin(), vertexToIndex[triVertecies[i]].end(), index) != vertexToIndex[triVertecies[i]].end()))
-//					vertexToIndex[triVertecies[i]].push_back(index);
-//				indexArray.push_back(index);
-//				newVertex = false;
-//				break;
-//			}
-//			index++;
-//		}
-//		if (newVertex)
-//		{
-//			if (!(find(vertexToIndex[triVertecies[i]].begin(), vertexToIndex[triVertecies[i]].end(), index) != vertexToIndex[triVertecies[i]].end()))
-//				vertexToIndex[triVertecies[i]].push_back(index);
-//			//MGlobal::displayInfo(MString() + thisVertex.pos[0] + " " + thisVertex.pos[1] + " " + thisVertex.pos[2] + " " + thisVertex.normal[0] + " " + thisVertex.normal[1] + " " + thisVertex.normal[2]);
-//			verteciesData.push_back(thisVertex);
-//			indexArray.push_back(index);
-//		}
-//	}
-//	vector<float*>::iterator it;
-////	for (it = normals.begin(); it < normals.end(); it++)
-////	{
-////		delete[] (*it);
-////	}
 	vector<VertexLayout> verteciesData;	
 	vector<UINT>indexArray;
 
@@ -547,29 +433,7 @@ void meshCreated(MObject &node)
 
 void meshVerteciesChanged(MPlug &plug)
 {
-	//int index = plug.logicalIndex();
-	////MGlobal::displayInfo(plug.name());
-	////MGlobal::displayInfo(plug.node().apiTypeStr());
 	MFnMesh meshNode(plug.node());
-	//MFloatPointArray vertexPos;
-	//meshNode.getPoints(vertexPos, MSpace::kObject);
-
-	//VertexLayout thisVertex;
-	//vertexPos[index].get(thisVertex.pos);
-	//vector<UINT> thisVertexIndecies = vertexIndexMap[meshNode.fullPathName().asChar()][index];
-	//MFloatVectorArray normals;
-	//meshNode.getNormals(normals);
-	//MVector Normal;
-	//float normalF[3];
-	//vector<VertexLayout> verteciesData;
-	//MItMeshVertex vertexIter(meshNode.object());
-	//for (UINT i = 0; i < thisVertexIndecies.size(); i++)
-	//{
-	//	normals[i].get(thisVertex.normal);
-
-	//	verteciesData.push_back(thisVertex);
-	//}
-
 
 	vector<VertexLayout> verteciesData;
 	vector<UINT>indexArray;
@@ -661,300 +525,38 @@ void meshVerteciesChanged(MPlug &plug)
 	}
 	MessageQueueStruct queueData(data, offset);
 	messageQueue.push_back(queueData);
-
-	//MFnMesh meshNode(node);
-	//MPointArray verticesPos;
-	//meshNode.getPoints(verticesPos, MSpace::kObject);
-
-
-
-	////vector<int> facesModified;
-
-	////MStringArray commandResult;
-
-	//////------- This makes so that whatever the user selects we also update the surrounding vertecies
-	//////------- Get whatever is selected as vertecies if posible, if no component is selected, it will fail
-	////if (MGlobal::executePythonCommand("maya.cmds.polyListComponentConversion(tv=True)", commandResult))
-	////{
-	////	//------- Select All Vertecies
-	////	//MGlobal::executePythonCommand("maya.cmds.select('" + commandResult[0] + "' , r = True)");
-	////	for (UINT i = ; i < commandResult.length(); i++)
-	////	{
-	////		MGlobal::executePythonCommand("maya.cmds.select('" + commandResult[i] + "', add=True )");
-	////	}
-	////	//------- Get the faces that shares atleas on point of the selected vertecies
-	////	MGlobal::executePythonCommand("maya.cmds.polyListComponentConversion(tf=True)", commandResult);
-
-	////	//------- Get the selected faces from commandResult
-	////	for (UINT i = 0; i < commandResult.length(); i++)
-	////	{
-	////		MGlobal::displayInfo(MString() + commandResult[i]);
-	////		const char* thisString = commandResult[i].asChar();
-	////		UINT thisStringLength = commandResult[i].length() - 1;
-	////		UINT stringOffset = 0;
-	////		int lastFace = 0;
-	////		int firstFace = -1;
-	////		if (thisString[thisStringLength] == ']')
-	////		{
-	////			stringOffset += 1;
-	////			vector<char>tmpLastFace;
-	////			tmpLastFace.push_back('\0');
-	////			while (thisString[thisStringLength - stringOffset] == '0' || thisString[thisStringLength - stringOffset] == '1' ||
-	////				thisString[thisStringLength - stringOffset] == '2' || thisString[thisStringLength - stringOffset] == '3' ||
-	////				thisString[thisStringLength - stringOffset] == '4' || thisString[thisStringLength - stringOffset] == '5' ||
-	////				thisString[thisStringLength - stringOffset] == '6' || thisString[thisStringLength - stringOffset] == '7' ||
-	////				thisString[thisStringLength - stringOffset] == '8' || thisString[thisStringLength - stringOffset] == '9')
-	////			{
-	////				tmpLastFace.push_back(thisString[thisStringLength - stringOffset]);
-	////				stringOffset += 1;
-	////			}
-	////			stringOffset += 1;
-	////			char* tmp = new char[tmpLastFace.size()];
-	////			vector<char>::reverse_iterator it;
-	////			UINT z = 0;
-	////			for (it = tmpLastFace.rbegin(); it != tmpLastFace.rend(); it++)
-	////			{
-	////				tmp[z] = *it;
-	////				z++;
-	////			}
-	////			MString tmpString(tmp);
-	////			if (tmpString.length() != 0)
-	////				lastFace = tmpString.asInt();
-	////			delete[] tmp;
-	////			tmpString.clear();
-
-	////			tmpLastFace.clear();
-	////			tmpLastFace.push_back('\0');
-	////			while (thisString[thisStringLength - stringOffset] == '0' || thisString[thisStringLength - stringOffset] == '1' ||
-	////				thisString[thisStringLength - stringOffset] == '2' || thisString[thisStringLength - stringOffset] == '3' ||
-	////				thisString[thisStringLength - stringOffset] == '4' || thisString[thisStringLength - stringOffset] == '5' ||
-	////				thisString[thisStringLength - stringOffset] == '6' || thisString[thisStringLength - stringOffset] == '7' ||
-	////				thisString[thisStringLength - stringOffset] == '8' || thisString[thisStringLength - stringOffset] == '9')
-	////			{
-	////				tmpLastFace.push_back(thisString[thisStringLength - stringOffset]);
-	////				stringOffset += 1;
-	////			}
-
-	////			tmp = new char[tmpLastFace.size()];
-	////			z = 0;
-	////			for (it = tmpLastFace.rbegin(); it != tmpLastFace.rend(); it++)
-	////			{
-	////				tmp[z] = *it;
-	////				z++;
-	////			}
-	////			tmpString.set(tmp);
-	////			if (tmpString.length() != 0)
-	////				firstFace = tmpString.asInt();
-	////			delete[] tmp;
-
-	////			if (firstFace == -1)
-	////				facesModified.push_back(lastFace);
-	////			else
-	////			{
-	////				for (UINT k = firstFace; k <= lastFace; k++)
-	////					facesModified.push_back(k);
-	////			}
-	////		}
-	////	}
-	//	vector<int>FaceIDsToUpdate;
-
-	////	vector<int>::iterator it;
-	////	MIntArray VerteciesToUpdate;
-	////	UINT z = 0;
-	////	for (it = facesModified.begin(); it != facesModified.end(); it++)
-	////	{
-	////		meshNode.getPolygonVertices(*it, VerteciesToUpdate);
-	////		for (unsigned int i = 0; i < VerteciesToUpdate.length(); i++)
-	////		{
-	////			if (!(find(FaceIDsToUpdate.begin(), FaceIDsToUpdate.end(), VerteciesToUpdate[i]) != FaceIDsToUpdate.end()))
-	////			{
-	////				FaceIDsToUpdate.push_back(VerteciesToUpdate[i]);
-	////				//for(UINT W = 0; W < vertexIndexMap[meshNode.fullPathName().asChar()].at(VerteciesToUpdate[i]).size(); W++)
-	////				//	FaceIDsToUpdate.push_back(vertexIndexMap[meshNode.fullPathName().asChar()].at(VerteciesToUpdate[i])[W]);
-	////			}
-	////		}
-	////	}
-
-	//	//Iterate tought selected
-	//	MRichSelection activeList;
-	//	MGlobal::getRichSelection(activeList, true);
-	//	MSelectionList list1;
-	//	MSelectionList list2;
-	//	activeList.getSelection(list1);
-	//	activeList.getSymmetry(list2);
-	//	list1.merge(list2, MSelectionList::kMergeNormal);
-	//	MItSelectionList iter(list1);
-	//	for (; !iter.isDone(); iter.next())
-	//	{
-	//		MDagPath item;
-	//		MObject components;
-	//		iter.getDagPath(item, components);
-
-	//		//if currentNode in iter == this node then do stuff
-	//		if (item.node() == node)
-	//		{
-	//			if (components.apiType() == MFn::kMeshVertComponent)
-	//			{
-	//				INT dummy;
-	//				MItMeshVertex vertexIter(item, components);
-	//				for (; !vertexIter.isDone(); vertexIter.next())
-	//				{
-	//					MIntArray connectedFaces;
-	//					vertexIter.getConnectedFaces(connectedFaces);
-	//					for (UINT f = 0; f < connectedFaces.length(); f++)
-	//					{
-	//						if (!(find(FaceIDsToUpdate.begin(), FaceIDsToUpdate.end(), connectedFaces[f]) != FaceIDsToUpdate.end()))
-	//						{
-	//							MGlobal::displayInfo(MString() + connectedFaces[f]);
-	//							FaceIDsToUpdate.push_back(connectedFaces[f]);
-	//						}
-	//					}
-	//				}
-	//			}
-	//			else if (components.apiType() == MFn::kMeshEdgeComponent)
-	//			{
-	//				INT dummy;
-	//				MItMeshEdge edgeIter(item, components);
-	//				for (; !edgeIter.isDone(); edgeIter.next())
-	//				{
-	//					MIntArray connectedEdges;
-	//					edgeIter.getConnectedEdges(connectedEdges);
-	//					MItMeshEdge secondEdgeIter(item, components);
-	//					for (UINT e = 0; e < connectedEdges.length(); e++)
-	//					{	
-	//						secondEdgeIter.setIndex(connectedEdges[e], dummy);
-	//						MIntArray connectedFaces;
-	//						secondEdgeIter.getConnectedFaces(connectedFaces);
-	//						MItMeshPolygon faceIter(item);
-	//						for (UINT f = 0; f < connectedFaces.length(); f++)
-	//						{
-	//							if (!(find(FaceIDsToUpdate.begin(), FaceIDsToUpdate.end(), connectedFaces[f]) != FaceIDsToUpdate.end()))
-	//								{
-	//									MGlobal::displayInfo(MString() + connectedFaces[f]);
-	//									FaceIDsToUpdate.push_back(connectedFaces[f]);
-	//								}
-	//						}
-	//					}
-	//				}
-	//				
-	//			}
-	//			else if (components.apiType() == MFn::kMeshPolygonComponent)
-	//			{
-	//				INT dummy;
-	//				vector<int> alreadyCheackedFaces;
-	//				MItMeshPolygon polyIter(item, components);
-	//				for (; !polyIter.isDone(); polyIter.next())
-	//				{
-	//					MIntArray connectedEdges;
-	//					polyIter.getConnectedEdges(connectedEdges);
-	//					MItMeshEdge secondEdgeIter(item, components);
-	//					for (UINT e = 0; e < connectedEdges.length(); e++)
-	//					{
-	//						secondEdgeIter.setIndex(connectedEdges[e], dummy);
-	//						MIntArray connectedFaces;
-	//						secondEdgeIter.getConnectedFaces(connectedFaces);
-	//						MItMeshPolygon faceIter(item);
-	//						for (UINT f = 0; f < connectedFaces.length(); f++)
-	//						{
-	//							if (!(find(FaceIDsToUpdate.begin(), FaceIDsToUpdate.end(), connectedFaces[f]) != FaceIDsToUpdate.end()))
-	//							{
-	//								MGlobal::displayInfo(MString() + connectedFaces[f]);
-	//								FaceIDsToUpdate.push_back(connectedFaces[f]);
-	//							}
-	//						}
-	//					}
-	//				}
-	//			}
-
-	//			//----- Data
-
-	//			MFloatPointArray vertexPos;
-	//			meshNode.getPoints(vertexPos, MSpace::kObject);
-	//			vector<VertexLayout>verteciesData;
-	//			vector<int>indeciesUpdated;
-	//			VertexLayout thisVertex;
-
-	//			MVector tmpNormalVector;
-	//			double tmpNormalDouble[3];
-
-	//			MFloatVectorArray normalsTest;
-	//			for (UINT faceID = 0; faceID < FaceIDsToUpdate.size(); faceID++)
-	//			{
-	//				MGlobal::displayInfo("writhing face to vectors");
-	//				MIntArray vertexIDs;
-	//				meshNode.getPolygonVertices(faceID, vertexIDs);
-	//				for (UINT i = 0; i < vertexIDs.length(); i++)
-	//				{
-	//					MGlobal::displayInfo(MString() + "vertexIDs: " + vertexIDs[i]);
-	//					vector<UINT> thisVertexIndecies = vertexIndexMap[meshNode.fullPathName().asChar()].at(vertexIDs[i]);
-	//					MGlobal::displayInfo(MString() + "thisVertexIndecies.size(): " + thisVertexIndecies.size());
-	//					for (UINT vertexToIndexNumber = 0; vertexToIndexNumber < thisVertexIndecies.size(); vertexToIndexNumber++)
-	//					{		
-	//						MGlobal::displayInfo(MString() + " thisVertexIndecies[vertexToIndexNumber]: " + thisVertexIndecies[vertexToIndexNumber]);
-	//						meshNode.getFaceVertexNormal(faceID, thisVertexIndecies[vertexToIndexNumber], tmpNormalVector);
-	//						MGlobal::displayInfo("TEST CHECK");
-	//						vertexPos[vertexIDs[i]].get(thisVertex.pos);
-	//						tmpNormalVector.get(tmpNormalDouble);
-	//						thisVertex.normal[0] = tmpNormalDouble[0];
-	//						thisVertex.normal[1] = tmpNormalDouble[1];
-	//						thisVertex.normal[2] = tmpNormalDouble[2];
-	//						verteciesData.push_back(thisVertex);
-	//						indeciesUpdated.push_back(thisVertexIndecies[vertexToIndexNumber]);
-	//					}
-	//					//MGlobal::displayInfo(MString() + tmpNormalFloat[0] + " " + tmpNormalFloat[1] + " " + tmpNormalFloat[2]);
-	//				}
-	//			}
-
-
-	//			////------ Send the Vertecies Changed ---------
-	//			VertexChangeHeader header;
-	//			header.nameLength = meshNode.name().length() + 1;
-	//			header.numVerteciesChanged = indeciesUpdated.size();
-
-	//			char* data = mem.getAllocatedMemory(sizeof(MessageType::mVertexChange) + sizeof(VertexChangeHeader) + meshNode.name().length() + 1 + indeciesUpdated.size() * sizeof(indeciesUpdated[0]) + verteciesData.size() * sizeof(verteciesData[0]));
-
-	//			UINT64 offset = 0;
-	//			MessageType type = MessageType::mVertexChange;
-
-	//			memcpy(&data[offset], &type, sizeof(MessageType::mVertexChange));
-	//			offset += sizeof(MessageType::mVertexChange);
-
-	//			memcpy(&data[offset], &header, sizeof(VertexChangeHeader));
-	//			offset += sizeof(VertexChangeHeader);
-
-	//			memcpy(&data[offset], meshNode.name().asChar(), meshNode.name().length() + 1);
-	//			offset += meshNode.name().length() + 1;
-
-	//			memcpy(&data[offset], verteciesData.data(), verteciesData.size() * sizeof(verteciesData[0]));
-	//			offset += verteciesData.size() * sizeof(verteciesData[0]);
-
-	//			memcpy(&data[offset], indeciesUpdated.data(), indeciesUpdated.size() * sizeof(indeciesUpdated[0]));
-	//			offset += indeciesUpdated.size() * sizeof(indeciesUpdated[0]);
-
-	//			if (messageQueue.size() == 0)
-	//				gShared.write(data, offset);
-	//			else
-	//			{
-	//				MessageQueueStruct queueData(data, offset);
-	//				messageQueue.push_back(queueData);
-	//			}
-
-	//			break;
-	//		}
-	//	}
-	//}
-}
-
-void meshTopologyChange(MObject &node, void *clientData)
-{
-	MGlobal::displayInfo("TopologyChange");
 }
 
 void cameraChanged(const MString &str, MObject &node, void *clientData)
 {
 	MFnDagNode thisNode(node);
-	cameraCreated(node);
-	transformCreate(thisNode.parent(0));
+	MString name = thisNode.name();
+	MessageType type = MessageType::mCameraChanged;
+
+	NameHeader header;
+	header.nameLength = name.length() + 1;
+
+
+	char*& data = mem.getAllocatedMemory(sizeof(MessageType::mCameraChanged) + sizeof(NameHeader)+thisNode.name().length() + 1);
+	UINT64 offset = 0;
+	memcpy(&data[offset], &type, sizeof(MessageType::mCameraChanged));
+	offset += sizeof(MessageType::mCameraChanged);
+
+	memcpy(&data[offset], &header, sizeof(NameHeader));
+	offset += sizeof(NameHeader);
+	// -- Copy name;
+	memcpy(&data[offset], name.asChar(), name.length() + 1);
+	offset += name.length() + 1;
+
+	if (messageQueue.size() == 0)
+	{
+		if (gShared.write(data, offset))
+		{
+			return;
+		}
+	}
+	MessageQueueStruct queueData(data, offset);
+	messageQueue.push_back(queueData);
 }
 
 void cameraAttributeChanged(MNodeMessage::AttributeMessage p_Msg, MPlug &p_Plug, MPlug &p_Plug2, void *p_ClientData)

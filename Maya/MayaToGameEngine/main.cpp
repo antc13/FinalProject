@@ -63,9 +63,8 @@ EXPORT MStatus initializePlugin(MObject obj)
 	M3dView::get3dView(0, view);
 	MDagPath currentCamera;
 	view.getCamera(currentCamera);
-	MFnDagNode thisNode(currentCamera);
-	cameraCreated(thisNode.object());
-	transformCreate(thisNode.parent(0));
+	cameraChanged("", currentCamera.node(), 0);
+
 
 	idArray.append(MDGMessage::addNodeAddedCallback(nodeCreated));
 	idArray.append(MUiMessage::addCameraChangedCallback("modelPanel4", cameraChanged));
