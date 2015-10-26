@@ -576,11 +576,16 @@ void cameraCreated(MObject &node)
 
 	bool isOrtho;
 	isOrtho = camera.isOrtho();
-	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(NodeRemovedHeader) + camera.name().length() + (sizeof(float)* 4 * 4) + sizeof(isOrtho));
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(NodeRemovedHeader) + camera.name().length() + (sizeof(float)* 4 * 4) + sizeof(isOrtho) + sizeof(float) * 4);
 
 	MFloatMatrix projectionMatrix = camera.projectionMatrix();
 	float camMatrix[4][4];
 	projectionMatrix.get(camMatrix);
+
+	float nearPlane = camera.nearClippingPlane();
+	float farPlane = camera.farClippingPlane();
+	float aspectRatio = camera.aspectRatio();
+	float fov = camera.horizontalFieldOfView();
 
 	MessageType type = MessageType::mCamera;
 	UINT64 offset = 0;
@@ -601,6 +606,18 @@ void cameraCreated(MObject &node)
 
 	memcpy(&data[offset], &isOrtho, sizeof(isOrtho));
 	offset += sizeof(isOrtho);
+
+	memcpy(&data[offset], &nearPlane, sizeof(float));
+	offset += sizeof(float);
+
+	memcpy(&data[offset], &farPlane, sizeof(float));
+	offset += sizeof(float);
+
+	memcpy(&data[offset], &aspectRatio, sizeof(float));
+	offset += sizeof(float);
+
+	memcpy(&data[offset], &fov, sizeof(float));
+	offset += sizeof(float);
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(camera.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));

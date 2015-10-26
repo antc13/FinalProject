@@ -281,13 +281,19 @@ void main::update(float elapsedTime)
 			}
 			delete[] name;
 		}
+
+		// Check if a new camera is created
 		else if (type == MessageType::mCamera)
 		{
 			char* name;
 			float camMatrix[4][4];
 			bool isOrtho = true;
+			float nearPlane = 0;
+			float farPlane = 0;
+			float aspectRatio = 0;
+			float fov = 0;
 			
-			mayaData.getNewCamera(name, camMatrix, &isOrtho);
+			mayaData.getNewCamera(name, camMatrix, &isOrtho, &nearPlane, &farPlane, &aspectRatio, &fov);
 
 			bool isNew = false;
 			Node* cameraNode = _scene->findNode(name);
@@ -306,10 +312,11 @@ void main::update(float elapsedTime)
 					camMatrix[0][3], camMatrix[1][3], camMatrix[2][3], camMatrix[3][3]);
 
 				Camera* cam;
+				
 				if (isOrtho)
-					cam = Camera::createOrthographic(0, 0, 90, 0.1, 10000);
+					cam = Camera::createOrthographic(0, 0, aspectRatio, nearPlane, farPlane);
 				else
-					cam = Camera::createPerspective(54.43, 1.5 , 0.1, 10000);
+					cam = Camera::createPerspective(fov, aspectRatio , nearPlane, farPlane);
 				cam->setProjectionMatrix(projectionMatrix);
 
 				cameraNode->setCamera(cam);
@@ -325,6 +332,7 @@ void main::update(float elapsedTime)
 			delete[] name;
 		}
 
+		// Check if a camera attribute has changed
 		else if (type == MessageType::mCameraChanged)
 		{
 			char* name;
