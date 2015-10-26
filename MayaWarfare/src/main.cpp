@@ -123,7 +123,8 @@ void main::update(float elapsedTime)
 			char* name;
 			char* texturePath;
 			float diffuseColor[3];
-			mayaData.getMaterial(name, texturePath, diffuseColor);
+			float ambientColor[3];
+			mayaData.getMaterial(name, texturePath, diffuseColor, ambientColor);
 
 			bool modelsNeedNewMaterial = false;
 
@@ -156,7 +157,9 @@ void main::update(float elapsedTime)
 				ThisOurMaterial.texture->setWrapMode(Texture::CLAMP, Texture::CLAMP);
 			}
 			else
-				ourMaterialMap[name].color.set(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1);
+				ourMaterialMap[name].diffuseColor.set(diffuseColor[0], diffuseColor[1], diffuseColor[2], 1);
+
+			ourMaterialMap[name].ambientColor.set(ambientColor);
 
 			//If models need update on material, then update them.
 			if (modelsNeedNewMaterial)
@@ -188,9 +191,9 @@ void main::update(float elapsedTime)
 						if (texturePath)
 							newMaterial->getParameter("u_diffuseTexture")->bindValue(&ourMaterialMap[name], &OurMaterial::getTexure);
 						else
-							newMaterial->getParameter("u_diffuseColor")->bindValue(&ourMaterialMap[name], &OurMaterial::getColor);
+							newMaterial->getParameter("u_diffuseColor")->bindValue(&ourMaterialMap[name], &OurMaterial::getDiffuseColor);
 
-						newMaterial->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+						newMaterial->getParameter("u_ambientColor")->bindValue(&ourMaterialMap[name], &OurMaterial::getAmbientColor);
 						
 						Node* thisNode = _scene->findNode(it->first);
 						Model* thisModel = static_cast<Model*>(thisNode->getDrawable());
@@ -248,9 +251,9 @@ void main::update(float elapsedTime)
 				if (ourMat.diffuseTexFilePath.size() > 0)
 					newMaterial->getParameter("u_diffuseTexture")->bindValue(&ourMat, &OurMaterial::getTexure);
 				else
-					newMaterial->getParameter("u_diffuseColor")->bindValue(&ourMat, &OurMaterial::getColor);
+					newMaterial->getParameter("u_diffuseColor")->bindValue(&ourMat, &OurMaterial::getDiffuseColor);
 
-				newMaterial->getParameter("u_ambientColor")->setValue(Vector3(0.1f, 0.1f, 0.1f));
+				newMaterial->getParameter("u_ambientColor")->bindValue(&ourMat, &OurMaterial::getAmbientColor);
 
 				thisModel->setMaterial(newMaterial);
 

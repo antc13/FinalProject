@@ -15,7 +15,7 @@ public:
 	void getCameraChanged(char*& name);
 	void getNewTransform(char*& name, float translation[3], float scale[3], float rotation[4]);
 	void getLight(float color[3], float& range);
-	void getMaterial(char*& name, char*& texturePath, float diffuseColor[3]);
+	void getMaterial(char*& name, char*& texturePath, float diffuseColor[3], float ambientColor[3]);
 	void getMeshMaterialNames(char*& meshName, char*& materialName);
 
 	void getVertexChanged(char*& name, VertexLayout*& verteciesData, UINT*& indexNumbers, UINT& numVerteciesChanged);

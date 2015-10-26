@@ -7,7 +7,8 @@ using namespace gameplay;
 class OurMaterial
 {
 public:
-	Vector4 color;
+	Vector4 diffuseColor;
+	Vector3 ambientColor;
 	std::string diffuseTexFilePath;
 	Texture::Sampler* texture;
 
@@ -15,7 +16,9 @@ public:
 
 	~OurMaterial();
 
-	Vector4 getColor() const;
+	Vector4 getDiffuseColor() const;
+
+	Vector3 getAmbientColor() const;
 
 	const char* getDiffuseTexFilePath() const;
 

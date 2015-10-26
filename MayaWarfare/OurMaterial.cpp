@@ -3,7 +3,8 @@
 
 OurMaterial::OurMaterial()
 {
-	color = Vector4(0, 0, 0, 1);
+	diffuseColor = Vector4(0, 0, 0, 1);
+	ambientColor = Vector3(0, 0, 0);
 	diffuseTexFilePath = "";
 	texture = nullptr;
 }
@@ -13,10 +14,16 @@ OurMaterial::~OurMaterial()
 
 }
 
-Vector4 OurMaterial::getColor() const
+Vector4 OurMaterial::getDiffuseColor() const
 {
-	return color;
+	return diffuseColor;
 }
+
+Vector3 OurMaterial::getAmbientColor() const
+{
+	return ambientColor;
+}
+
 const char* OurMaterial::getDiffuseTexFilePath() const
 {
 	return diffuseTexFilePath.c_str();

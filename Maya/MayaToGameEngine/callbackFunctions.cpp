@@ -203,6 +203,7 @@ void materialChange(MObject &node)
 	MGlobal::displayInfo(depNode.name());
 	MGlobal::displayInfo(node.apiTypeStr());
 	float materialColor[3];
+	float ambientColor[3];
 	MString materialName;
 	MString texturePath;
 	MObject object;
@@ -215,6 +216,9 @@ void materialChange(MObject &node)
 		materialColor[0] = color.r;
 		materialColor[1] = color.g;
 		materialColor[2] = color.b;
+
+		color = lambertShader.ambientColor();
+		color.get(ambientColor);
 
 		MPlug plug = depNode.findPlug("color", true);
 		plug.connectedTo(allConnections, true, false);
@@ -249,7 +253,7 @@ void materialChange(MObject &node)
 		header.texturePathLength = texturePath.length() + 1;
 
 	UINT64 offset = 0;
-	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mNewMaterial) + sizeof(MaterialHeader)+header.materialNameLength + header.texturePathLength + sizeof(float)* 3);
+	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mNewMaterial) + sizeof(MaterialHeader) + header.materialNameLength + header.texturePathLength + sizeof(float) * 3 + sizeof(float) * 3);
 	MessageType type = MessageType::mNewMaterial;
 
 	memcpy(data, &type, sizeof(MessageType::mNewMaterial));
@@ -264,10 +268,13 @@ void materialChange(MObject &node)
 	memcpy(&data[offset], texturePath.asChar(), header.texturePathLength);
 	offset += header.texturePathLength;
 
+	memcpy(&data[offset], ambientColor, sizeof(float) * 3);
+	offset += sizeof(float) * 3;
+
 	memcpy(&data[offset], materialColor, sizeof(float)* 3);
 	offset += sizeof(float)* 3;
 
-	if (messageQueue.size() == 0)
+	if (messageQueue.empty())
 	{
 		if (gShared.write(data, offset))
 		{

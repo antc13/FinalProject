@@ -120,7 +120,7 @@ void MayaData::getLight(float color[3], float& range)
 
 }
 
-void MayaData::getMaterial(char*& name, char*& texturePath, float diffuseColor[3])
+void MayaData::getMaterial(char*& name, char*& texturePath, float diffuseColor[3], float ambientColor[3])
 {
 
 	diffuseColor[0] = 0;
@@ -142,8 +142,11 @@ void MayaData::getMaterial(char*& name, char*& texturePath, float diffuseColor[3
 	}
 	else
 		texturePath = nullptr;
+	memcpy(ambientColor, &data[offset], sizeof(float) * 3);
+	offset += sizeof(float) * 3;
 
 	memcpy(diffuseColor, &data[offset], sizeof(float) * 3);
+	
 }
 
 void MayaData::getMeshMaterialNames(char*& meshName, char*& materialName)
