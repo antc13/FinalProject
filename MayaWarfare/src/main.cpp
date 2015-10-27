@@ -290,49 +290,72 @@ void main::update(float elapsedTime)
 		{
 			char* name;
 			float camMatrix[4][4];
-			bool isOrtho = true;
-			float nearPlane = 0;
-			float farPlane = 0;
-			float aspectRatio = 0;
-			float fov = 0;
+			//bool isOrtho = true;
+			//float nearPlane = 0;
+			//float farPlane = 0;
+			//float aspectRatio = 0;
+			//float fov = 0;
 			
-			mayaData.getNewCamera(name, camMatrix, &isOrtho, &nearPlane, &farPlane, &aspectRatio, &fov);
+			mayaData.getNewCamera(name, camMatrix/*, &isOrtho, &nearPlane, &farPlane, &aspectRatio, &fov*/);
+
+			char* nodeID = nullptr;
+			std::string nodeNameString;
+			//Find the id for the node with this name
+			for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); it++)
+			{
+				nodeNameString = *it;
+				if (nodeNameString.compare(name) == 0)
+				{
+					nodeID = *it;
+					break;
+				}
+			}
 
 			bool isNew = false;
-			Node* cameraNode = _scene->findNode(name);
-			if (!cameraNode)
+			Node* cameraNode;
+			if (!nodeID)
 			{
 				cameraNode = Node::create(name);
+				_scene->addNode(cameraNode);
+				nodeNames.push_back(name);
 				isNew = true;
 			}
+			else
+				cameraNode = _scene->findNode(nodeID);
 
-			if (cameraNode)
+			Camera* cam = cameraNode->getCamera();
+
+			//if cam does not exist, give us a new camera...
+			if (!cam)
 			{
-
-				Matrix projectionMatrix(camMatrix[0][0], camMatrix[1][0], camMatrix[2][0], camMatrix[3][0],
-					camMatrix[0][1], camMatrix[1][1], camMatrix[2][1], camMatrix[3][1],
-					camMatrix[0][2], camMatrix[1][2], camMatrix[2][2], camMatrix[3][2],
-					camMatrix[0][3], camMatrix[1][3], camMatrix[2][3], camMatrix[3][3]);
-
-				Camera* cam;
-				
-				if (isOrtho)
-					cam = Camera::createOrthographic(0, 0, aspectRatio, nearPlane, farPlane);
-				else
-					cam = Camera::createPerspective(MATH_RAD_TO_DEG(fov), aspectRatio, nearPlane, farPlane);
-				//cam->setProjectionMatrix(projectionMatrix);
-
+				cam = Camera::createPerspective(0, 0, 0, 0);
 				cameraNode->setCamera(cam);
-
-				if (isNew)
-					_scene->addNode(cameraNode);
-				
-				if (_scene->getActiveCamera()->getNode() == NULL)
-					_scene->setActiveCamera(cam);
-
-				
 			}
-			delete[] name;
+
+			Matrix projectionMatrix(camMatrix[0][0], camMatrix[1][0], camMatrix[2][0], camMatrix[3][0],
+				camMatrix[0][1], camMatrix[1][1], camMatrix[2][1], camMatrix[3][1],
+				camMatrix[0][2], camMatrix[1][2], -camMatrix[2][2], -camMatrix[3][2],
+				camMatrix[0][3], camMatrix[1][3], camMatrix[2][3], camMatrix[3][3]);
+
+			cam->setProjectionMatrix(projectionMatrix);
+					
+			/*if (isOrtho)
+				cam = Camera::createOrthographic(0, 0, aspectRatio, nearPlane, farPlane);
+			else
+				cam = Camera::createPerspective(MATH_RAD_TO_DEG(fov), aspectRatio, nearPlane, farPlane);*/
+			//cam->setProjectionMatrix(projectionMatrix);
+
+			//cameraNode->setCamera(cam);
+
+			//if (isNew)
+			//	_scene->addNode(cameraNode);
+			//
+			//if (_scene->getActiveCamera()->getNode() == NULL)
+			//	_scene->setActiveCamera(cam);
+
+				
+			if (!isNew)
+				delete[] name;
 		}
 
 		// Check if a camera attribute has changed
