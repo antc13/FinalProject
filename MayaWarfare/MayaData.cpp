@@ -44,7 +44,7 @@ void MayaData::getNewTransform(char*& name, float translation[3], float scale[3]
 	memcpy(rotation, &data[sizeof(MessageType::mTransform) + sizeof(TransformHeader)+header->itemNameLength + sizeof(float)* 3 + sizeof(float) * 3], sizeof(float) * 4);
 }
 
-void MayaData::getNewCamera(char*& name, float camMatrix[4][4]/*, bool* isOrtho, float* nearPlane, float* farPlane, float* aspectRatio, float* fov*/)
+void MayaData::getNewCamera(char*& name, float camMatrix[4][4])
 {
 	NodeRemovedHeader* header = (NodeRemovedHeader*)&data[sizeof(MessageType::mCamera)];
 	name = new char[header->nameLength];
@@ -56,21 +56,6 @@ void MayaData::getNewCamera(char*& name, float camMatrix[4][4]/*, bool* isOrtho,
 	memcpy(camMatrix, &data[offset], sizeof(float) * 4 * 4);
 
 	offset += sizeof(float) * 4 * 4;
-
-	/*memcpy(isOrtho, &data[offset], sizeof(bool));
-	offset += sizeof(bool);
-
-	memcpy(nearPlane, &data[offset], sizeof(float));
-	offset += sizeof(float);
-
-	memcpy(farPlane, &data[offset], sizeof(float));
-	offset += sizeof(float);
-
-	memcpy(aspectRatio, &data[offset], sizeof(float));
-	offset += sizeof(float);
-
-	memcpy(fov, &data[offset], sizeof(float));
-	offset += sizeof(float);*/
 }
 
 void MayaData::getCameraChanged(char*& name)

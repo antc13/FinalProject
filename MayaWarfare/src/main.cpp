@@ -10,17 +10,7 @@ main::main()
 
 void main::initialize()
 {	
-	// Load game scene from file
     _scene = Scene::create();
-    // Get the box model and initialize its material parameter values and bindings
-
-	//block->setDepthFunction(RenderState::DepthFunction::DEPTH_LESS);
-	//block->setFrontFace(RenderState::FrontFace::FRONT_FACE_CW);
-	//block->setDepthTest(true);
-	//block->setCullFace(true);
-	//block->setDepthWrite(true);
-	//boxMaterial->setStateBlock(block);
-    // Set the aspect ratio for the scene's camera to match the current resolution
 	
 	Node* lightNode = Node::create("pointLightShape1");
 	Light* light = Light::createPoint(Vector3(0.5f, 0.5f, 0.5f), 20);
@@ -90,16 +80,10 @@ void main::update(float elapsedTime)
 				triModel->setMaterial(material);
 			triNode->setDrawable(triModel);
 
-			Node* copy = triNode->clone();
-			_scene->addNode(copy);
+			_scene->addNode(triNode);
 
-			triModel->release();
-			triMesh->release();
-			triNode->release();
 			delete[] index;
-			if (!alreadyExisting)
-				nodeNames.push_back(name);
-			else
+			if (alreadyExisting)
 				delete[] name;
 		}
 		else if (type == MessageType::mVertexChange)
@@ -112,7 +96,7 @@ void main::update(float elapsedTime)
 
 			VertexLayout* vertexData = meshVertecies.find(name)->second;
 
-			Model* mesh = dynamic_cast<Model*>(_scene->findNode(name)->getDrawable());
+			Model* mesh = static_cast<Model*>(_scene->findNode(name)->getDrawable());
 			mesh->getMesh()->setVertexData((float*)updatedVerteciesData);
 			delete[] index;
 			delete[] updatedVerteciesData;
@@ -134,7 +118,6 @@ void main::update(float elapsedTime)
 			if (ThisOurMaterial.diffuseTexFilePath.size() > 0 && !texturePath)
 			{		
 				ThisOurMaterial.diffuseTexFilePath.clear();
-				ThisOurMaterial.diffuseTexFilePath = "";
 				ThisOurMaterial.texture->release();
 				ThisOurMaterial.texture = nullptr;
 				modelsNeedNewMaterial = true;
@@ -165,7 +148,7 @@ void main::update(float elapsedTime)
 			if (modelsNeedNewMaterial)
 			{
 				//loop tought all models;
-				for (std::map<char*, std::string>::iterator it = NodeIDToMaterial.begin(); it != NodeIDToMaterial.end(); it++)
+				for (std::map<std::string, std::string>::iterator it = NodeIDToMaterial.begin(); it != NodeIDToMaterial.end(); it++)
 				{
 					//if model uses this material, then create a new updated
 					if (it->second.compare(name) == 0)
@@ -195,7 +178,7 @@ void main::update(float elapsedTime)
 
 						newMaterial->getParameter("u_ambientColor")->bindValue(&ourMaterialMap[name], &OurMaterial::getAmbientColor);
 						
-						Node* thisNode = _scene->findNode(it->first);
+						Node* thisNode = _scene->findNode(it->first.data());
 						Model* thisModel = static_cast<Model*>(thisNode->getDrawable());
 						thisModel->setMaterial(newMaterial);
 					}
@@ -209,23 +192,9 @@ void main::update(float elapsedTime)
 
 			mayaData.getMeshMaterialNames(meshName, materialName);
 
-			char* nodeID = nullptr;
-			std::string nodeNameString;
-			//Find the id for the node with this name
-			for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); it++)
+			Node* thisNode = _scene->findNode(meshName);
+			if (thisNode)
 			{
-				nodeNameString = *it;
-				if (nodeNameString.compare(meshName) == 0)
-				{
-					nodeID = *it;
-					break;
-				}
-			}
-
-			//If we found an ID, then change material
-			if (nodeID)
-			{		
-				Node* thisNode = _scene->findNode(nodeID);
 				Model* thisModel = static_cast<Model*>(thisNode->getDrawable());
 				Material* newMaterial = nullptr;
 				OurMaterial& ourMat = ourMaterialMap[materialName];
@@ -257,7 +226,7 @@ void main::update(float elapsedTime)
 
 				thisModel->setMaterial(newMaterial);
 
-				NodeIDToMaterial[nodeID] = materialName;
+				NodeIDToMaterial[meshName] = materialName;
 			}
 
 			delete[] meshName;
@@ -285,43 +254,22 @@ void main::update(float elapsedTime)
 			delete[] name;
 		}
 
-		// Check if a new camera is created
+		// Check if attrubutes on a camera is changes or if new then creates the camera
 		else if (type == MessageType::mCamera)
 		{
 			char* name;
 			float camMatrix[4][4];
-			//bool isOrtho = true;
-			//float nearPlane = 0;
-			//float farPlane = 0;
-			//float aspectRatio = 0;
-			//float fov = 0;
 			
-			mayaData.getNewCamera(name, camMatrix/*, &isOrtho, &nearPlane, &farPlane, &aspectRatio, &fov*/);
-
-			char* nodeID = nullptr;
-			std::string nodeNameString;
-			//Find the id for the node with this name
-			for (std::vector<char*>::iterator it = nodeNames.begin(); it != nodeNames.end(); it++)
-			{
-				nodeNameString = *it;
-				if (nodeNameString.compare(name) == 0)
-				{
-					nodeID = *it;
-					break;
-				}
-			}
+			mayaData.getNewCamera(name, camMatrix);
 
 			bool isNew = false;
-			Node* cameraNode;
-			if (!nodeID)
+			Node* cameraNode = _scene->findNode(name);
+			if (!cameraNode)
 			{
 				cameraNode = Node::create(name);
 				_scene->addNode(cameraNode);
-				nodeNames.push_back(name);
 				isNew = true;
 			}
-			else
-				cameraNode = _scene->findNode(nodeID);
 
 			Camera* cam = cameraNode->getCamera();
 
@@ -338,27 +286,12 @@ void main::update(float elapsedTime)
 				camMatrix[0][3], camMatrix[1][3], camMatrix[2][3], camMatrix[3][3]);
 
 			cam->setProjectionMatrix(projectionMatrix);
-					
-			/*if (isOrtho)
-				cam = Camera::createOrthographic(0, 0, aspectRatio, nearPlane, farPlane);
-			else
-				cam = Camera::createPerspective(MATH_RAD_TO_DEG(fov), aspectRatio, nearPlane, farPlane);*/
-			//cam->setProjectionMatrix(projectionMatrix);
-
-			//cameraNode->setCamera(cam);
-
-			//if (isNew)
-			//	_scene->addNode(cameraNode);
-			//
-			//if (_scene->getActiveCamera()->getNode() == NULL)
-			//	_scene->setActiveCamera(cam);
-
-				
+									
 			if (!isNew)
 				delete[] name;
 		}
 
-		// Check if a camera attribute has changed
+		// Check if a camera that is look through is changed
 		else if (type == MessageType::mCameraChanged)
 		{
 			char* name;

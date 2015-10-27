@@ -66,16 +66,13 @@ private:
     bool _wireframe;
 
 	MayaData mayaData;
-	std::vector<char*> nodeNames;
+
 	std::map<std::string, VertexLayout*> meshVertecies;
 	std::map<std::string, Mesh*> meshes;
-	std::vector<char*> camNames;
-	Camera* orthoCam;
-	Camera* perspCam;
-	std::map<std::string, OurMaterial> ourMaterialMap;
-	std::map<char*, std::string> NodeIDToMaterial;
 
-	//std::map<std::string, Material*> materialMap;
+	std::map<std::string, OurMaterial> ourMaterialMap;
+	std::map<std::string, std::string> NodeIDToMaterial;
+
 };
 
 #endif

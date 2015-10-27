@@ -36,10 +36,7 @@ void transformAttributeChanged(MNodeMessage::AttributeMessage msg, MPlug &plug, 
 
 	if (msg & MNodeMessage::kAttributeSet)
 	{
-		transformCreate(plug.node());
-		//MGlobal::displayInfo(MString() + "New translation: " + translation.x + " " + translation.y + " " + translation.z);
-		//MGlobal::displayInfo(MString() + "New scale: " + scale[0] + " " + scale[1] + " " + scale[2]);
-		//MGlobal::displayInfo(MString() + "New rotation: " + rotation.x * 180 / M_PI + " " + rotation.y * 180 / M_PI + " " + rotation.z * 180 / M_PI);
+		transformCreate(plug.node());	
 	}
 
 }
@@ -581,18 +578,12 @@ void cameraCreated(MObject &node)
 	NodeRemovedHeader camHeader;
 	camHeader.nameLength = camera.name().length() + 1;
 
-	//bool isOrtho;
-	//isOrtho = camera.isOrtho();
 	char *&data = mem.getAllocatedMemory(sizeof(MessageType::mCamera) + sizeof(NodeRemovedHeader) + camera.name().length() + (sizeof(float)* 4 * 4)/* + sizeof(isOrtho) + sizeof(float) * 4*/);
 
 	MFloatMatrix projectionMatrix = camera.projectionMatrix();
 	float camMatrix[4][4];
 	projectionMatrix.get(camMatrix);
 
-	/*float nearPlane = camera.nearClippingPlane();
-	float farPlane = camera.farClippingPlane();
-	float aspectRatio = camera.aspectRatio();
-	float fov = camera.horizontalFieldOfView();*/
 
 	MessageType type = MessageType::mCamera;
 	UINT64 offset = 0;
@@ -610,21 +601,6 @@ void cameraCreated(MObject &node)
 		memcpy(&data[offset + sizeof(float)* 4 * i], camMatrix[i], sizeof(float)* 4);
 
 	offset += sizeof(float)* 4 * 4;
-
-	/*memcpy(&data[offset], &isOrtho, sizeof(isOrtho));
-	offset += sizeof(isOrtho);
-
-	memcpy(&data[offset], &nearPlane, sizeof(float));
-	offset += sizeof(float);
-
-	memcpy(&data[offset], &farPlane, sizeof(float));
-	offset += sizeof(float);
-
-	memcpy(&data[offset], &aspectRatio, sizeof(float));
-	offset += sizeof(float);
-
-	memcpy(&data[offset], &fov, sizeof(float));
-	offset += sizeof(float);*/
 
 	idArray.append(MNodeMessage::addAttributeChangedCallback(camera.parent(0), transformAttributeChanged));
 	idArray.append(MNodeMessage::addNodePreRemovalCallback(node, nodeRemoval));
