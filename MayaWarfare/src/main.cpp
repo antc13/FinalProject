@@ -319,8 +319,8 @@ void main::update(float elapsedTime)
 				if (isOrtho)
 					cam = Camera::createOrthographic(0, 0, aspectRatio, nearPlane, farPlane);
 				else
-					cam = Camera::createPerspective(fov, aspectRatio , nearPlane, farPlane);
-				cam->setProjectionMatrix(projectionMatrix);
+					cam = Camera::createPerspective(MATH_RAD_TO_DEG(fov), aspectRatio, nearPlane, farPlane);
+				//cam->setProjectionMatrix(projectionMatrix);
 
 				cameraNode->setCamera(cam);
 
